@@ -8,11 +8,10 @@
 package org.ioe.tprsa.db;
 
 /**
- * 
  * @author Ganesh Tiwari
- * 
  */
 public interface DataBase {
+
 	public void setType(String type);
 
 	public String[] readRegistered();

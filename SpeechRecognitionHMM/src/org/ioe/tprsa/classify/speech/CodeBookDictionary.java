@@ -13,32 +13,30 @@ import org.ioe.tprsa.classify.speech.vq.Centroid;
 import org.ioe.tprsa.db.Model;
 
 /**
- * 
  * @author Ganesh Tiwari
- * 
  */
 public class CodeBookDictionary implements Serializable, Model {
 
-	private static final long serialVersionUID = 2094442679375932181L;
-	protected int dimension;
-	protected Centroid[] cent;
+	private static final long	serialVersionUID	= 2094442679375932181L;
+	protected int				dimension;
+	protected Centroid[]		cent;
 
-	public CodeBookDictionary() {
+	public CodeBookDictionary( ) {
 	}
 
-	public int getDimension() {
+	public int getDimension( ) {
 		return dimension;
 	}
 
-	public void setDimension(int dimension) {
+	public void setDimension( int dimension ) {
 		this.dimension = dimension;
 	}
 
-	public Centroid[] getCent() {
+	public Centroid[] getCent( ) {
 		return cent;
 	}
 
-	public void setCent(Centroid[] cent) {
+	public void setCent( Centroid[] cent ) {
 		this.cent = cent;
 	}
 }

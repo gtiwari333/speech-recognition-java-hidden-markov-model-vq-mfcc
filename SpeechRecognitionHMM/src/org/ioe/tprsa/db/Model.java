@@ -8,9 +8,7 @@
 package org.ioe.tprsa.db;
 
 /**
- * 
  * @author Ganesh Tiwari
- * 
  */
 public interface Model {
 }

@@ -16,9 +16,10 @@ import java.util.Formatter;
  * @author Ganesh Tiwari
  */
 public class ArrayWriter {
+
 	private static Formatter formatter;
 
-	public ArrayWriter() {
+	public ArrayWriter( ) {
 	}
 
 	/**
@@ -29,23 +30,23 @@ public class ArrayWriter {
 	 * @param fileName
 	 *            output file
 	 */
-	public static void printIntArrayToFile(int[] array, String fileName) {// ( T
+	public static void printIntArrayToFile( int[] array, String fileName ) {// ( T
 																			// []
 																			// array...
-		// get formatter object with @param fileName
+																			// get formatter object with @param fileName
 		try {
-			formatter = new Formatter(fileName);
-		} catch (FileNotFoundException e) {
-			System.err.println("File Not Found Exception :" + fileName);
+			formatter = new Formatter( fileName );
+		} catch ( FileNotFoundException e ) {
+			System.err.println( "File Not Found Exception :" + fileName );
 			return;
 		}
 		// write the array
 		// formatter.format("****** Array's Length %d ******", array.length);
-		for (int i = 0; i < array.length; i++) {
-			formatter.format("%d\n", array[i]);
+		for ( int i = 0; i < array.length; i++ ) {
+			formatter.format( "%d\n", array[ i ] );
 		}
-		formatter.flush();
-		formatter.close();
+		formatter.flush( );
+		formatter.close( );
 	}
 
 	/**
@@ -54,9 +55,9 @@ public class ArrayWriter {
 	 * @param array
 	 *            input array
 	 */
-	public static void printIntArrayToConole(int[] array) {
-		for (int i = 0; i < array.length; i++) {
-			System.out.println(array[i]);
+	public static void printIntArrayToConole( int[] array ) {
+		for ( int i = 0; i < array.length; i++ ) {
+			System.out.println( array[ i ] );
 		}
 	}
 
@@ -68,21 +69,21 @@ public class ArrayWriter {
 	 * @param fileName
 	 *            output file
 	 */
-	public static void printDoubleArrayToFile(double[] array, String fileName) {
+	public static void printDoubleArrayToFile( double[] array, String fileName ) {
 		// get formatter object with @param fileName
 		try {
-			formatter = new Formatter(fileName);
-		} catch (FileNotFoundException e) {
-			System.err.println("File Not Found Exception :" + fileName);
+			formatter = new Formatter( fileName );
+		} catch ( FileNotFoundException e ) {
+			System.err.println( "File Not Found Exception :" + fileName );
 			return;
 		}
 		// write the array
 		// formatter.format("****** Array's Length %d ******", array.length);
-		for (int i = 0; i < array.length; i++) {
-			formatter.format("%f\n", array[i]);
+		for ( int i = 0; i < array.length; i++ ) {
+			formatter.format( "%f\n", array[ i ] );
 		}
-		formatter.flush();
-		formatter.close();
+		formatter.flush( );
+		formatter.close( );
 	}
 
 	/**
@@ -93,24 +94,24 @@ public class ArrayWriter {
 	 * @param fileName
 	 *            output file
 	 */
-	public static void print2DDoubleArrayToFile(double[][] array, String fileName) {
+	public static void print2DDoubleArrayToFile( double[][] array, String fileName ) {
 		// get formatter object with @param fileName
 		try {
-			formatter = new Formatter(fileName);
-		} catch (FileNotFoundException e) {
-			System.err.println("File Not Found Exception :" + fileName);
+			formatter = new Formatter( fileName );
+		} catch ( FileNotFoundException e ) {
+			System.err.println( "File Not Found Exception :" + fileName );
 			return;
 		}
 		// write the array
 		// formatter.format("****** Array's Length %d ******", array.length);
-		for (int i = 0; i < array.length; i++) {
-			for (int j = 0; j < array[i].length; j++) {
-				formatter.format("%f\n", array[i][j]);
+		for ( int i = 0; i < array.length; i++ ) {
+			for ( int j = 0; j < array[ i ].length; j++ ) {
+				formatter.format( "%f\n", array[ i ][ j ] );
 			}
 		}
 
-		formatter.flush();
-		formatter.close();
+		formatter.flush( );
+		formatter.close( );
 	}
 
 	/**
@@ -119,9 +120,9 @@ public class ArrayWriter {
 	 * @param array
 	 *            input array
 	 */
-	public static void printDoubleArrayToConole(double[] array) {
-		for (int i = 0; i < array.length; i++) {
-			System.out.println(array[i]);
+	public static void printDoubleArrayToConole( double[] array ) {
+		for ( int i = 0; i < array.length; i++ ) {
+			System.out.println( array[ i ] );
 		}
 	}
 
@@ -131,28 +132,12 @@ public class ArrayWriter {
 	 * @param array
 	 *            input array
 	 */
-	public static void print2DTabbedDoubleArrayToConole(double[][] array) {
-		for (int i = 0; i < array.length; i++) {
-			for (int j = 0; j < array[i].length; j++) {
-				System.out.print(array[i][j] + "\t");
+	public static void print2DTabbedDoubleArrayToConole( double[][] array ) {
+		for ( int i = 0; i < array.length; i++ ) {
+			for ( int j = 0; j < array[ i ].length; j++ ) {
+				System.out.print( array[ i ][ j ] + "\t" );
 			}
-			System.out.println();
-		}
-
-	}
-
-	/**
-	 * display @param array 's content to console
-	 * 
-	 * @param array
-	 *            input array
-	 */
-	public static void printFrameWise2DDoubleArrayToConole(double[][] array) {
-		for (int i = 0; i < array.length; i++) {
-			for (int j = 0; j < array[i].length; j++) {
-				System.out.println(array[j][i]);
-			}
-			System.out.println();
+			System.out.println( );
 		}
 
 	}
@@ -163,12 +148,28 @@ public class ArrayWriter {
 	 * @param array
 	 *            input array
 	 */
-	public static void print2DDoubleArrayToConole(double[][] array) {
-		for (int i = 0; i < array.length; i++) {
-			for (int j = 0; j < array[i].length; j++) {
-				System.out.println(array[i][j]);
+	public static void printFrameWise2DDoubleArrayToConole( double[][] array ) {
+		for ( int i = 0; i < array.length; i++ ) {
+			for ( int j = 0; j < array[ i ].length; j++ ) {
+				System.out.println( array[ j ][ i ] );
 			}
-			System.out.println();
+			System.out.println( );
+		}
+
+	}
+
+	/**
+	 * display @param array 's content to console
+	 * 
+	 * @param array
+	 *            input array
+	 */
+	public static void print2DDoubleArrayToConole( double[][] array ) {
+		for ( int i = 0; i < array.length; i++ ) {
+			for ( int j = 0; j < array[ i ].length; j++ ) {
+				System.out.println( array[ i ][ j ] );
+			}
+			System.out.println( );
 		}
 
 	}
@@ -181,21 +182,21 @@ public class ArrayWriter {
 	 * @param fileName
 	 *            output file
 	 */
-	public static void printStringArrayToFile(String[] array, String fileName) {
+	public static void printStringArrayToFile( String[] array, String fileName ) {
 		// get formatter object with @param fileName
 		try {
-			formatter = new Formatter(fileName);
-		} catch (FileNotFoundException e) {
-			System.err.println("File Not Found Exception :" + fileName);
+			formatter = new Formatter( fileName );
+		} catch ( FileNotFoundException e ) {
+			System.err.println( "File Not Found Exception :" + fileName );
 			return;
 		}
 		// write the array
 		// formatter.format("****** Array's Length %d ******", array.length);
-		for (int i = 0; i < array.length; i++) {
-			formatter.format("%s\n", array[i]);
+		for ( int i = 0; i < array.length; i++ ) {
+			formatter.format( "%s\n", array[ i ] );
 		}
-		formatter.flush();
-		formatter.close();
+		formatter.flush( );
+		formatter.close( );
 	}
 
 	/**
@@ -204,9 +205,9 @@ public class ArrayWriter {
 	 * @param array
 	 *            input array
 	 */
-	public static void printStringArrayToConole(String[] array) {
-		for (int i = 0; i < array.length; i++) {
-			System.out.println(array[i]);
+	public static void printStringArrayToConole( String[] array ) {
+		for ( int i = 0; i < array.length; i++ ) {
+			System.out.println( array[ i ] );
 		}
 	}
 
@@ -218,21 +219,21 @@ public class ArrayWriter {
 	 * @param fileName
 	 *            output file
 	 */
-	public static void printFloatArrayToFile(float[] array, String fileName) {
+	public static void printFloatArrayToFile( float[] array, String fileName ) {
 		// get formatter object with @param fileName
 		try {
-			formatter = new Formatter(fileName);
-		} catch (FileNotFoundException e) {
-			System.err.println("File Not Found Exception :" + fileName);
+			formatter = new Formatter( fileName );
+		} catch ( FileNotFoundException e ) {
+			System.err.println( "File Not Found Exception :" + fileName );
 			return;
 		}
 		// write the array
 		// formatter.format("****** Array's Length %d ******", array.length);
-		for (int i = 0; i < array.length; i++) {
-			formatter.format("%f\n", array[i]);
+		for ( int i = 0; i < array.length; i++ ) {
+			formatter.format( "%f\n", array[ i ] );
 		}
-		formatter.flush();
-		formatter.close();
+		formatter.flush( );
+		formatter.close( );
 	}
 
 	/**
@@ -241,9 +242,9 @@ public class ArrayWriter {
 	 * @param array
 	 *            input array
 	 */
-	public static void printFloatArrayToConole(float[] array) {
-		for (int i = 0; i < array.length; i++) {
-			System.out.println(array[i]);
+	public static void printFloatArrayToConole( float[] array ) {
+		for ( int i = 0; i < array.length; i++ ) {
+			System.out.println( array[ i ] );
 		}
 	}
 }

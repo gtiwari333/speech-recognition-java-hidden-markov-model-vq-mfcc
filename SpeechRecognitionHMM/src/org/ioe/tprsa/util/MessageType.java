@@ -9,7 +9,6 @@ package org.ioe.tprsa.util;
 
 /**
  * @author Ganesh
- * 
  */
 public enum MessageType {
 	ERROR, WARNING, SUCCESS, INFO;
