@@ -22,10 +22,30 @@ public class TrainingTestingWaveFiles {
 	protected File		wavPath;
 
 	/**
-	 * MAKE SURE THAT Files are/will be in this folder structure the folder structure for training : (Selected)DBROOTFOLDER\ \speechTrainWav\\apple\\apple01.wav
-	 * \speechTrainWav\\apple\\apple02.wav \speechTestWav\\cat\\cat01.wav \speechTestWav\\cat\\cat01.wav \speechTestWav\\cat\\cat01.wav
-	 * \speakerTrainWav\\userA\\userA1.wav \codeBook\\codeBook.cbk \models\\HMM\\apple.hmm \models\\HMM\\cat.hmm
+	 * MAKE SURE THAT Files are/will be in this folder structure the folder
+	 * structure for training : 
+	 * 
+	 * (Selected)DBROOTFOLDER\
+	 * 
+	 * \speechTrainWav\\apple\\apple01.wav 
+	 * 
+	 * \speechTrainWav\\apple\\apple02.wav
+	 * 
+	 * \speechTestWav\\cat\\cat01.wav 
+	 * 
+	 * \speechTestWav\\cat\\cat01.wav
+	 * 
+	 * \speechTestWav\\cat\\cat01.wav 
+	 * 
+	 * \speakerTrainWav\\userA\\userA1.wav
+	 * 
+	 * \codeBook\\codeBook.cbk 
+	 * 
+	 * \models\\HMM\\apple.hmm \models\\HMM\\cat.hmm
+	 * 
 	 */
+	
+	
 	/**
 	 * constructor, sets the wavFile path according to the args supplied
 	 * 
