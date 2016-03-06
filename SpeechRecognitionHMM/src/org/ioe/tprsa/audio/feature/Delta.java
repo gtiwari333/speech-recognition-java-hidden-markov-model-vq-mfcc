@@ -36,6 +36,10 @@ public class Delta {
 	public double[][] performDelta2D(double[][] data) {
 		int noOfMfcc = data[0].length;
 		int frameCount = data.length;
+		
+//		if(frameCount<M){
+//			frameCount= M;
+//		}
 		// 1. calculate sum of mSquare i.e., denominator
 		double mSqSum = 0;
 		for (int i = -M; i < M; i++) {
@@ -43,10 +47,44 @@ public class Delta {
 		}
 		// 2.calculate numerator
 		double delta[][] = new double[frameCount][noOfMfcc];
+		
+		
+		if(frameCount<M){
+			
+			double [][]dataNew = new double [M][noOfMfcc];
+			delta = new double[M][noOfMfcc];
+			
+			
+			//i = frameCount 
+			for ( int i = 0; i < frameCount; i++ ) {
+				for ( int j = 0; j < noOfMfcc; j++ ) {
+					dataNew[i][j] =  data[ i ][ j ] ;
+				}
+				System.out.println( );
+			}
+			
+			for ( int i = frameCount; i < M; i++ ) {
+				for ( int j = 0; j < noOfMfcc; j++ ) {
+					dataNew[i][j] =  0;
+				}
+				System.out.println( );
+			}
+			
+			frameCount = M;
+			
+			data = dataNew;
+		}
+		
+		
 		for (int i = 0; i < noOfMfcc; i++) {
 			// handle the boundary
 			// 0 padding results best result
 			// from 0 to M
+			
+			if(frameCount==1){
+				System.out.println( "look into" );
+			}
+			
 			for (int k = 0; k < M; k++) {
 				// delta[k][i] = 0; //0 padding
 				delta[k][i] = data[k][i]; // 0 padding
