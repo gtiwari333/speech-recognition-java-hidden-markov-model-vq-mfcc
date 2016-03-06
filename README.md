@@ -9,6 +9,26 @@ Automatically exported from code.google.com/p/speech-recognition-java-hidden-mar
 - org.ioe.tprsa.ui.HMM_VQ_Speech_Recognition : GUI that allows record of voice samples per word, train the samples, test with a recorded audio or saved .wav file.
 
 
+###Folder conventions :
+
+#####Training audio files 
+-	speechTrainWav\apple\apple01.wav
+-	speechTrainWav\apple\apple02.wav
+-	speechTrainWav\apple\apple03.wav
+-	speechTrainWav\apple\apple04.wav
+-	speechTrainWav\cat\cat01.wav
+-	speechTrainWav\cat\cat02.wav
+-	speechTrainWav\cat\cat03.wav
+	
+#####Vector Quantization code book :	
+-	models\codeBook\codebook.cbk
+	
+#####HMM trained models :	
+-	models\HMM\apple.hmm
+-	models\HMM\cat.hmm
+-	models\GMM\Nepal.hmm
+
+
 ###Please feel free to use/modify the code !
   
 ###For any queries :
