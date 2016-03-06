@@ -9,6 +9,7 @@ package org.ioe.tprsa.util;
 
 import java.io.FileNotFoundException;
 import java.util.Formatter;
+import java.util.List;
 
 /**
  * saves the array to file or console ...... supports various data types
@@ -208,6 +209,12 @@ public class ArrayWriter {
 	public static void printStringArrayToConole( String[] array ) {
 		for ( int i = 0; i < array.length; i++ ) {
 			System.out.println( array[ i ] );
+		}
+	}
+
+	public static void printStringArrayToConole( List< String > array ) {
+		for ( String string: array ) {
+			System.out.println( string );
 		}
 	}
 

@@ -8,6 +8,9 @@
 package org.ioe.tprsa.db;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.ioe.tprsa.classify.speech.CodeBookDictionary;
 import org.ioe.tprsa.classify.speech.HMMModel;
@@ -20,21 +23,21 @@ public class ObjectIODataBase implements DataBase {
 	/**
 	 * type of current model,,gmm,hmm,cbk, which is extension ofsaved file
 	 */
-	String		type;
+	String			type;
 	/**
 	 *
 	 */
-	String[]	modelFiles;
+	List< String >	modelFiles;
 	/**
 	 *
 	 */
-	String[]	userNames;
-	String		CURRENTFOLDER;
+	String[]		userNames;
+	String			CURRENTFOLDER;
 	/**
 	 * the file name to same codebook, adds .cbk extension automatically
 	 */
-	String		CODEBOOKFILENAME	= "codebook";
-	String		currentModelType;
+	String			CODEBOOKFILENAME	= "codebook";
+	String			currentModelType;
 
 	/**
 	 * MAKE SURE THAT Files are/will be in this folder structure the folder structure for training : (Selected)DBROOTFOLDER\ \speechTrainWav\\apple\\apple01.wav
@@ -51,10 +54,10 @@ public class ObjectIODataBase implements DataBase {
 	public void setType( String type ) {
 		this.type = type;
 		if ( this.type.equalsIgnoreCase( "hmm" ) ) {
-			CURRENTFOLDER = "models\\HMM";
+			CURRENTFOLDER = "models" + File.separator + "HMM";
 		}
 		if ( this.type.equalsIgnoreCase( "cbk" ) ) {
-			CURRENTFOLDER = "models\\codeBook";
+			CURRENTFOLDER = "models" + File.separator + "codeBook";
 		}
 	}
 
@@ -62,12 +65,12 @@ public class ObjectIODataBase implements DataBase {
 	 *
 	 */
 	@Override
-	public Model readModel( String name ) {
+	public Model readModel( String name ) throws Exception {
 		Model model = null;
 		if ( type.equalsIgnoreCase( "hmm" ) ) {
 			ObjectIO< HMMModel > oio = new ObjectIO< HMMModel >( );
 			model = new HMMModel( );
-			model = oio.readModel( CURRENTFOLDER + "\\" + name + "." + type );
+			model = oio.readModel( CURRENTFOLDER + File.separator + name + "." + type );
 			//            System.out.println("Type " + type);
 			//            System.out.println("Read ::::: " + DBROOTFOLDER + "\\" + CURRENTFOLDER + "\\" + name + "." + type);
 			// System.out.println(model);
@@ -75,7 +78,7 @@ public class ObjectIODataBase implements DataBase {
 		if ( type.equalsIgnoreCase( "cbk" ) ) {
 			ObjectIO< CodeBookDictionary > oio = new ObjectIO< CodeBookDictionary >( );
 			model = new CodeBookDictionary( );
-			model = oio.readModel( CURRENTFOLDER + "\\" + CODEBOOKFILENAME + "." + type );
+			model = oio.readModel( CURRENTFOLDER + File.separator + CODEBOOKFILENAME + "." + type );
 			//            System.out.println("Read ::::: " + DBROOTFOLDER + "\\" + CURRENTFOLDER + "\\" + CODEBOOKFILENAME + "." + type);
 		}
 		return model;
@@ -85,10 +88,10 @@ public class ObjectIODataBase implements DataBase {
 	 *
 	 */
 	@Override
-	public String[] readRegistered( ) {
+	public List< String > readRegistered( ) {
 
 		modelFiles = readRegisteredWithExtension( );
-		System.out.println( "modelFiles length (Oiodb) :" + modelFiles.length );
+		System.out.println( "modelFiles length (Oiodb) :" + modelFiles.size( ) );
 		return removeExtension( modelFiles );
 	}
 
@@ -96,34 +99,42 @@ public class ObjectIODataBase implements DataBase {
 	 *
 	 */
 	@Override
-	public void saveModel( Model model, String name ) {
+	public void saveModel( Model model, String name ) throws Exception{
 
 		if ( type.equalsIgnoreCase( "hmm" ) ) {
 			ObjectIO< HMMModel > oio = new ObjectIO< HMMModel >( );
 			oio.setModel( ( HMMModel ) model );
-			oio.saveModel( CURRENTFOLDER + "\\" + name + "." + type );
+			oio.saveModel( CURRENTFOLDER + File.separator + name + "." + type );
 		}
 		if ( type.equalsIgnoreCase( "cbk" ) ) {
 			ObjectIO< CodeBookDictionary > oio = new ObjectIO< CodeBookDictionary >( );
 			oio.setModel( ( CodeBookDictionary ) model );
-			oio.saveModel( CURRENTFOLDER + "\\" + CODEBOOKFILENAME + "." + type );
+			oio.saveModel( CURRENTFOLDER + File.separator + CODEBOOKFILENAME + "." + type );
 		}
 
 	}
 
-	private String[] readRegisteredWithExtension( ) {
+	private List< String > readRegisteredWithExtension( ) {
 		File modelPath = new File( CURRENTFOLDER );
-		modelFiles = new String[ modelPath.list( ).length ];
-		modelFiles = modelPath.list( );// must return only folders
+
+		modelFiles = Arrays.asList( modelPath.list( ) );// must return only folders
+
 		return modelFiles;
 	}
 
-	private String[] removeExtension( String[] modelFiles ) {
+	private String removeExtension( String fileName ) {
+
+		return fileName.substring( 0, fileName.lastIndexOf( '.' ) );
+
+	}
+
+	private List< String > removeExtension( List< String > modelFiles ) {
 		// remove the ext i.e., type
-		String[] noExtension = new String[ modelFiles.length ];
-		for ( int i = 0; i < modelFiles.length; i++ ) {
-			noExtension[ i ] = modelFiles[ i ].substring( 0, modelFiles[ i ].length( ) - 4 );// TODO:check the lengths
+		List< String > noExtension = new ArrayList< >( );
+		for ( String fileName: modelFiles ) {
+			noExtension.add( removeExtension( fileName ) );// TODO:check the lengths
 		}
+
 		return noExtension;
 	}
 }

@@ -7,10 +7,9 @@
  */
 package org.ioe.tprsa.db;
 
+import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
@@ -47,23 +46,19 @@ public class ObjectIO< T > {
 	 * 
 	 * @param filePath
 	 */
-	public void saveModel( String filePath ) {
+	public void saveModel( String filePath ) throws Exception {
+
+		File file = new File( filePath );
+		if ( !file.exists( ) ) {
+			file.getParentFile( ).mkdirs( );
+		}
+		
+
 		// open file
-		try {
-			output = new ObjectOutputStream( new FileOutputStream( filePath ) );
-		} catch ( FileNotFoundException e ) {
-			System.out.println( "File Not Found, while saving model" );
-		} catch ( IOException e ) {
-			System.out.println( "Some IO Exception, while opening file, for saving" );
-		}
+		output = new ObjectOutputStream( new FileOutputStream( file ) );
 		// save model
-		try {
-			output.writeObject( model );
-			output.close( );
-		} catch ( IOException e ) {
-			System.out.println( "IOException, error on writing model to file" );
-			e.printStackTrace( );
-		}
+		output.writeObject( model );
+		output.close( );
 	}
 
 	/**
@@ -72,28 +67,12 @@ public class ObjectIO< T > {
 	 * @param filePath
 	 * @return the model of type T
 	 */
-	public T readModel( String filePath ) {
+	public T readModel( String filePath ) throws Exception {
 		// open file
-		try {
-			input = new ObjectInputStream( new FileInputStream( filePath ) );
-		} catch ( FileNotFoundException e ) {
-			System.out.println( "File Not Found, while reading model" );
-		} catch ( IOException e ) {
-			System.out.println( "Some IO Exception, while opening file" );
-		}
+		input = new ObjectInputStream( new FileInputStream( filePath ) );
 		// read
-		try {
-			model = ( T ) input.readObject( );
-			input.close( );
-		} catch ( IOException e ) {
-			System.out.println( "Some IO Exception, while reading object from file" );
-			e.printStackTrace( );
-		} catch ( ClassNotFoundException e ) {
-			System.out.println( "Class Not Found, error on type cast" );
-		} catch ( NullPointerException e ) {
-			System.out.println( "new user we guess" );
-			return null;
-		}
+		model = ( T ) input.readObject( );
+		input.close( );
 		return model;
 	}
 }

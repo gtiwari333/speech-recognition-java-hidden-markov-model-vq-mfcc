@@ -54,20 +54,16 @@ public class WaveData {
 		return format;
 	}
 
-	public float[] extractAmplitudeFromFile( File wavFile ) {
-		try {
-			// create file input stream
-			FileInputStream fis = new FileInputStream( wavFile );
-			// create bytearray from file
-			arrFile = new byte[ ( int ) wavFile.length( ) ];
-			fis.read( arrFile );
-		} catch ( Exception e ) {
-			System.out.println( "SomeException : " + e.toString( ) );
-		}
+	public float[] extractAmplitudeFromFile( File wavFile ) throws Exception {
+		// create file input stream
+		FileInputStream fis = new FileInputStream( wavFile );
+		// create bytearray from file
+		arrFile = new byte[ ( int ) wavFile.length( ) ];
+		fis.read( arrFile );
 		return extractAmplitudeFromFileByteArray( arrFile );
 	}
 
-	public float[] extractAmplitudeFromFileByteArray( byte[] arrFile ) {
+	public float[] extractAmplitudeFromFileByteArray( byte[] arrFile ) throws Exception {
 		// System.out.println("File :  "+wavFile+""+arrFile.length);
 		bis = new ByteArrayInputStream( arrFile );
 		return extractAmplitudeFromFileByteArrayInputStream( bis );
@@ -79,38 +75,25 @@ public class WaveData {
 	 * @return PCM audioData
 	 * @throws Exception
 	 */
-	public float[] extractAmplitudeFromFileByteArrayInputStream( ByteArrayInputStream bis ) {
-		try {
-			audioInputStream = AudioSystem.getAudioInputStream( bis );
-		} catch ( UnsupportedAudioFileException e ) {
-			System.out.println( "unsupported file type, during extract amplitude" );
-			e.printStackTrace( );
-		} catch ( IOException e ) {
-			System.out.println( "IOException during extracting amplitude" );
-			e.printStackTrace( );
-		}
+	public float[] extractAmplitudeFromFileByteArrayInputStream( ByteArrayInputStream bis ) throws Exception {
+		audioInputStream = AudioSystem.getAudioInputStream( bis );
 		float milliseconds = ( long ) ( ( audioInputStream.getFrameLength( ) * 1000 ) / audioInputStream.getFormat( ).getFrameRate( ) );
 		durationSec = milliseconds / 1000.0;
 		return extractFloatDataFromAudioInputStream( audioInputStream );
 	}
 
-	public float[] extractFloatDataFromAudioInputStream( AudioInputStream audioInputStream ) {
+	public float[] extractFloatDataFromAudioInputStream( AudioInputStream audioInputStream ) throws Exception {
 		format = audioInputStream.getFormat( );
 		audioBytes = new byte[ ( int ) ( audioInputStream.getFrameLength( ) * format.getFrameSize( ) ) ];
 		// calculate durationSec
 		float milliseconds = ( long ) ( ( audioInputStream.getFrameLength( ) * 1000 ) / audioInputStream.getFormat( ).getFrameRate( ) );
 		durationSec = milliseconds / 1000.0;
 		// System.out.println("The current signal has duration "+durationSec+" Sec");
-		try {
-			audioInputStream.read( audioBytes );
-		} catch ( IOException e ) {
-			System.out.println( "IOException during reading audioBytes" );
-			e.printStackTrace( );
-		}
+		audioInputStream.read( audioBytes );
 		return extractFloatDataFromAmplitudeByteArray( format, audioBytes );
 	}
 
-	public float[] extractFloatDataFromAmplitudeByteArray( AudioFormat format, byte[] audioBytes ) {
+	public float[] extractFloatDataFromAmplitudeByteArray( AudioFormat format, byte[] audioBytes ) throws Exception {
 		// convert
 		audioData = null;
 		if ( format.getSampleSizeInBits( ) == 16 ) {
@@ -159,34 +142,28 @@ public class WaveData {
 	 * @param fileType
 	 *            the file type
 	 */
-	public void saveToFile( String name, AudioFileFormat.Type fileType, AudioInputStream audioInputStream ) {
+	public void saveToFile( String name, AudioFileFormat.Type fileType, AudioInputStream audioInputStream ) throws Exception {
+
+		System.out.println( "WaveData.saveToFile() " + name );
+
 		File myFile = new File( name );
 		if ( !myFile.exists( ) )
-			myFile.mkdir( );
+			myFile.mkdirs( );
 
 		if ( audioInputStream == null ) {
 			return;
 		}
 		// reset to the beginnning of the captured data
-		try {
-			audioInputStream.reset( );
-		} catch ( Exception e ) {
-			return;
-		}
+		audioInputStream.reset( );
 		myFile = new File( name + ".wav" );
 		int i = 0;
 		while ( myFile.exists( ) ) {
 			String temp = String.format( name + "%d", i++ );
 			myFile = new File( temp + ".wav" );
 		}
-		try {
-			if ( AudioSystem.write( audioInputStream, fileType, myFile ) == -1 ) {
-			}
-		} catch ( Exception ex ) {
+		if ( AudioSystem.write( audioInputStream, fileType, myFile ) == -1 ) {
 		}
 		System.out.println( myFile.getAbsolutePath( ) );
-		// JOptionPane.showMessageDialog(null, "File Saved !", "Success",
-		// JOptionPane.INFORMATION_MESSAGE);
 	}
 
 	/**
@@ -195,14 +172,10 @@ public class WaveData {
 	 * @param fileName
 	 *            the name of file to save the received byteArray of File
 	 */
-	public void saveFileByteArray( String fileName, byte[] arrFile ) {
-		try {
-			fos = new FileOutputStream( fileName );
-			fos.write( arrFile );
-			fos.close( );
-		} catch ( Exception ex ) {
-			System.err.println( "Error during saving wave file " + fileName + " to disk" + ex.toString( ) );
-		}
+	public void saveFileByteArray( String fileName, byte[] arrFile ) throws Exception {
+		fos = new FileOutputStream( fileName );
+		fos.write( arrFile );
+		fos.close( );
 		System.out.println( "WAV Audio data saved to " + fileName );
 	}
 }

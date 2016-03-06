@@ -15,6 +15,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -36,6 +37,7 @@ import org.ioe.tprsa.db.ObjectIODataBase;
 import org.ioe.tprsa.db.TrainingTestingWaveFiles;
 import org.ioe.tprsa.mediator.Operations;
 import org.ioe.tprsa.util.ErrorManager;
+import org.ioe.tprsa.util.Utils;
 
 /**
  * Main application- contains GUI and main method - train / test / data collection all can be done from here
@@ -110,7 +112,7 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 					if ( jTabbedPane.getSelectedIndex( ) == 0 ) {
 						soundCapture.setSaveFileName( null );
 					} else if ( jTabbedPane.getSelectedIndex( ) == 1 ) {
-						soundCapture.setSaveFileName( "TrainWav\\" + getWordsComboBoxAddWord( ).getSelectedItem( ) + "\\" + getWordsComboBoxAddWord( ).getSelectedItem( ) );
+						soundCapture.setSaveFileName( "TrainWav" + File.separator + getWordsComboBoxAddWord( ).getSelectedItem( ) + File.separator + getWordsComboBoxAddWord( ).getSelectedItem( ) );
 					}
 
 				}
@@ -173,11 +175,17 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 
 				public void actionPerformed( ActionEvent e ) {
 					if ( soundCapture.isSoundDataAvailable( ) && getWordsComboBoxVerify( ).getItemCount( ) > 0 ) {
-						String recWord = opr.hmmGetWordFromAmplitureArray( soundCapture.getAudioData( ) );
-						if ( recWord.equalsIgnoreCase( getWordsComboBoxVerify( ).getSelectedItem( ).toString( ) ) ) {
-							getStatusLblRecognize( ).setText( "Verified" );
-						} else {
-							getStatusLblRecognize( ).setText( "Not Verified" );
+
+						try {
+
+							String recWord = opr.hmmGetWordFromAmplitureArray( soundCapture.getAudioData( ) );
+							if ( recWord.equalsIgnoreCase( getWordsComboBoxVerify( ).getSelectedItem( ).toString( ) ) ) {
+								getStatusLblRecognize( ).setText( "Verified" );
+							} else {
+								getStatusLblRecognize( ).setText( "Not Verified" );
+							}
+						} catch ( Exception e2 ) {
+							e2.printStackTrace( );
 						}
 					}
 				}
@@ -233,7 +241,13 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 
 				public void actionPerformed( ActionEvent arg0 ) {
 					if ( soundCapture.isSoundDataAvailable( ) && getWordsComboBoxVerify( ).getItemCount( ) > 0 ) {
-						getStatusLblRecognize( ).setText( opr.hmmGetWordFromAmplitureArray( soundCapture.getAudioData( ) ) );
+
+						try {
+
+							getStatusLblRecognize( ).setText( opr.hmmGetWordFromAmplitureArray( soundCapture.getAudioData( ) ) );
+						} catch ( Exception e ) {
+							e.printStackTrace( );
+						}
 
 					}
 				}
@@ -254,9 +268,9 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 			db.setType( "hmm" );
 			wordsComboBoxVerify = new JComboBox( );
 			try {
-				String[] regs = db.readRegistered( );
-				for ( int i = 0; i < regs.length; i++ ) {
-					wordsComboBoxVerify.addItem( regs[ i ] );
+				List< String > regs = db.readRegistered( );
+				for ( String string: regs ) {
+					wordsComboBoxVerify.addItem( string );
 				}
 			} catch ( Exception e ) {
 			}
@@ -270,9 +284,9 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 			TrainingTestingWaveFiles ttwf = new TrainingTestingWaveFiles( "train" );
 			wordsComboBoxAddWord = new JComboBox( );
 			try {
-				String[] regs = ttwf.readWordWavFolder( );
-				for ( int i = 0; i < regs.length; i++ ) {
-					wordsComboBoxAddWord.addItem( regs[ i ] );
+				List< String > regs = ttwf.readWordWavFolder( );
+				for ( int i = 0; i < regs.size( ); i++ ) {
+					wordsComboBoxAddWord.addItem( regs.get( i ) );
 				}
 			} catch ( Exception e ) {
 			}
@@ -281,7 +295,7 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 
 				@Override
 				public void itemStateChanged( ItemEvent e ) {
-					soundCapture.setSaveFileName( "TrainWav\\" + getWordsComboBoxAddWord( ).getSelectedItem( ) + "\\" + getWordsComboBoxAddWord( ).getSelectedItem( ) );
+					soundCapture.setSaveFileName( "TrainWav" + File.separator + getWordsComboBoxAddWord( ).getSelectedItem( ) + File.separator + getWordsComboBoxAddWord( ).getSelectedItem( ) );
 				}
 			} );
 		}
@@ -301,8 +315,16 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 				public void actionPerformed( ActionEvent e ) {
 					System.out.println( "getting word file totest" );
 					File f = getTestFile( );
-					if ( f != null )
-						getStatusLblRecognize( ).setText( opr.hmmGetWordFromFile( f ) );
+					if ( f != null ) {
+
+						try {
+
+							getStatusLblRecognize( ).setText( opr.hmmGetWordFromFile( f ) );
+						} catch ( Exception e2 ) {
+							e2.printStackTrace( );
+						}
+
+					}
 				}
 			} );
 			getWordButton1.setBounds( new Rectangle( 225, 8, 189, 24 ) );
@@ -377,7 +399,7 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 			addWordToComboBtn.addActionListener( new ActionListener( ) {
 
 				public void actionPerformed( ActionEvent e ) {
-					String newWord = getAddWordToCombo( ).getText( );
+					String newWord = Utils.clean( getAddWordToCombo( ).getText( ) );
 					boolean isAlreadyRegistered = false;
 					if ( !newWord.isEmpty( ) ) {
 						// already in combo box
@@ -418,9 +440,16 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 						addTrainSampleBtn.setText( "Save Captured" );
 					} else if ( addTrainSampleBtn.getText( ).startsWith( "Save" ) ) {
 						// TODO: decouple path, may be singleton conf for path
-						soundCapture.setSaveFileName( "TrainWav\\" + getWordsComboBoxAddWord( ).getSelectedItem( ) + "\\" + getWordsComboBoxAddWord( ).getSelectedItem( ) );
-						soundCapture.getFileNameAndSaveFile( );
-						addTrainSampleBtn.setText( "Record" );
+						soundCapture.setSaveFileName( "TrainWav" + File.separator + getWordsComboBoxAddWord( ).getSelectedItem( ) + File.separator + getWordsComboBoxAddWord( ).getSelectedItem( ) );
+						
+						try {
+
+							soundCapture.getFileNameAndSaveFile( );
+							addTrainSampleBtn.setText( "Record" );
+							
+						} catch ( Exception e2 ) {
+							e2.printStackTrace( );
+						}
 					}
 				}
 			} );
@@ -471,7 +500,12 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 			generateCodeBookBtn.addActionListener( new ActionListener( ) {
 
 				public void actionPerformed( ActionEvent e ) {
-					opr.generateCodebook( );
+					try {
+
+						opr.generateCodebook( );
+					} catch ( Exception e2 ) {
+						e2.printStackTrace( );
+					}
 				}
 			} );
 			generateCodeBookBtn.setBounds( 10, 32, 167, 23 );
@@ -485,7 +519,12 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 			btnNewButton_2.addActionListener( new ActionListener( ) {
 
 				public void actionPerformed( ActionEvent e ) {
-					opr.hmmTrain( );
+					try {
+						opr.hmmTrain( );
+					} catch ( Exception e2 ) {
+						e2.printStackTrace( );
+
+					}
 				}
 			} );
 			btnNewButton_2.setBounds( 10, 74, 167, 23 );

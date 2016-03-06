@@ -7,6 +7,8 @@
  */
 package org.ioe.tprsa.db;
 
+import java.util.List;
+
 /**
  * @author Ganesh Tiwari
  */
@@ -14,9 +16,9 @@ public interface DataBase {
 
 	public void setType(String type);
 
-	public String[] readRegistered();
+	public List<String> readRegistered();
 
-	public Model readModel(String name);
+	public Model readModel(String name) throws Exception;
 
-	public void saveModel(Model m, String name);
+	public void saveModel(Model m, String name) throws Exception;
 }

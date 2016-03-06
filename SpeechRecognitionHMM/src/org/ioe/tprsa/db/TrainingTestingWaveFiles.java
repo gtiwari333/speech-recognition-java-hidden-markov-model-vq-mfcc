@@ -8,6 +8,8 @@
 package org.ioe.tprsa.db;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * various operations relating to reading train/testing wav folders<br>
@@ -17,9 +19,9 @@ import java.io.File;
  */
 public class TrainingTestingWaveFiles {
 
-	protected String[]	folderNames;
-	protected File[][]	waveFiles;
-	protected File		wavPath;
+	protected List< String >	folderNames;
+	protected File[][]			waveFiles;
+	protected File				wavPath;
 
 	/**
 	 * MAKE SURE THAT Files are/will be in this folder structure the folder
@@ -44,8 +46,7 @@ public class TrainingTestingWaveFiles {
 	 * \models\\HMM\\apple.hmm \models\\HMM\\cat.hmm
 	 * 
 	 */
-	
-	
+
 	/**
 	 * constructor, sets the wavFile path according to the args supplied
 	 * 
@@ -63,21 +64,21 @@ public class TrainingTestingWaveFiles {
 
 	private void readFolder( ) {
 		//		System.out.println(getWavPath().getAbsolutePath());
-		folderNames = new String[ getWavPath( ).list( ).length ];
-		folderNames = getWavPath( ).list( );// must return only folders
+		folderNames = Arrays.asList( getWavPath( ).list( ) );// must return only folders
 	}
 
-	public String[] readWordWavFolder( ) {
+	public List< String > readWordWavFolder( ) {
 		readFolder( );
 		return folderNames;
 	}
 
 	public File[][] readWaveFilesList( ) {
 		readFolder( );
-		waveFiles = new File[ folderNames.length ][];
-		for ( int i = 0; i < folderNames.length; i++ ) {
-			System.out.println( folderNames[ i ] );
-			File wordDir = new File( getWavPath( ) + "\\" + folderNames[ i ] + "\\" );
+		waveFiles = new File[ folderNames.size( ) ][];
+		for ( int i = 0; i < folderNames.size( ); i++ ) {
+
+			System.out.println( folderNames.get( i ) );
+			File wordDir = new File( getWavPath( ) + File.separator + folderNames.get( i ) + File.separator );
 			waveFiles[ i ] = wordDir.listFiles( );
 		}
 		System.out.println( "++++++Folder's Content+++++" );

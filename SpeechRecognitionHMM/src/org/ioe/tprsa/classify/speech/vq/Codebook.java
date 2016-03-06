@@ -141,7 +141,7 @@ public class Codebook {
 	 * calls: Centroid<br>
 	 * called by: volume
 	 */
-	public Codebook() {
+	public Codebook() throws Exception{
 		DataBase db = new ObjectIODataBase();
 		db.setType("cbk");
 		CodeBookDictionary cbd = new CodeBookDictionary();
@@ -221,7 +221,7 @@ public class Codebook {
 	 * calls: none<br>
 	 * called by: train
 	 */
-	public void saveToFile() {
+	public void saveToFile() throws Exception{
 		DataBase db = new ObjectIODataBase();
 		db.setType("cbk");
 		CodeBookDictionary cbd = new CodeBookDictionary();

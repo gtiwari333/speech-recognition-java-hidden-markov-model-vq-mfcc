@@ -511,7 +511,7 @@ public class HiddenMarkov {
 	 * @param word
 	 *            path of the file to load
 	 */
-	public HiddenMarkov( String word ) {
+	public HiddenMarkov( String word ) throws Exception{
 		DataBase db = new ObjectIODataBase( );
 		db.setType( "hmm" );
 		HMMModel model = new HMMModel( );
@@ -588,7 +588,7 @@ public class HiddenMarkov {
 	 * @param filepath
 	 *            file location
 	 */
-	public void save( String modelName ) {
+	public void save( String modelName ) throws Exception {
 		DataBase db = new ObjectIODataBase( );
 		db.setType( "hmm" );
 		HMMModel model = new HMMModel( );

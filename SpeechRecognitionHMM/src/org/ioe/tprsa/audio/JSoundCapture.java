@@ -149,7 +149,7 @@ public class JSoundCapture extends JPanel implements ActionListener {
 		System.out.println( "FileName Changed !!! " + saveFileName );
 	}
 
-	public float[] getAudioData( ) {
+	public float[] getAudioData( ) throws Exception {
 		if ( audioData == null ) {
 			audioData = wd.extractFloatDataFromAudioInputStream( audioInputStream );
 		}
@@ -181,7 +181,13 @@ public class JSoundCapture extends JPanel implements ActionListener {
 		Object obj = e.getSource( );
 		if ( isSaveRequired && obj.equals( saveB ) ) {
 
-			getFileNameAndSaveFile( );
+			try {
+				getFileNameAndSaveFile( );
+
+			} catch ( Exception e2 ) {
+				reportStatus( "Error in savng file " + e2.getMessage( ), MessageType.ERROR );
+			}
+
 		} else if ( obj.equals( playB ) ) {
 			if ( playB.getText( ).startsWith( "Play" ) ) {
 				playCaptured( );
@@ -267,7 +273,7 @@ public class JSoundCapture extends JPanel implements ActionListener {
 		pausB.setText( "Pause" );
 	}
 
-	public void getFileNameAndSaveFile( ) {
+	public void getFileNameAndSaveFile( ) throws Exception {
 		while ( saveFileName == null ) {
 			saveFileName = JOptionPane.showInputDialog( null, "Enter WAV File Name", "Getting File Name" );
 		}
@@ -551,7 +557,7 @@ public class JSoundCapture extends JPanel implements ActionListener {
 				out.flush( );
 				out.close( );
 			} catch ( IOException ex ) {
-				reportStatus( "Error on inputstream", MessageType.ERROR );
+				reportStatus( "Error on inputstream  " + ex.getMessage( ), MessageType.ERROR );
 			}
 
 			// load bytes into the audio input stream for playback
@@ -567,10 +573,15 @@ public class JSoundCapture extends JPanel implements ActionListener {
 			try {
 				audioInputStream.reset( );
 			} catch ( Exception ex ) {
-				reportStatus( "Eor in reseting inputStream", MessageType.ERROR );
+				reportStatus( "Error in reseting inputStream " + ex.getMessage( ), MessageType.ERROR );
 			}
-			if ( isDrawingRequired ) {
-				samplingGraph.createWaveForm( audioBytes );
+			try {
+				if ( isDrawingRequired ) {
+					samplingGraph.createWaveForm( audioBytes );
+				}
+
+			} catch ( Exception e ) {
+				reportStatus( "Error in drawing waveform " + e.getMessage( ), MessageType.ERROR );
 			}
 
 		}
@@ -600,7 +611,7 @@ public class JSoundCapture extends JPanel implements ActionListener {
 		 * @param audioBytes
 		 *            the audio bytes
 		 */
-		public void createWaveForm( byte[] audioBytes ) {
+		public void createWaveForm( byte[] audioBytes ) throws Exception {
 
 			lines.removeAllElements( ); // clear the old vector
 
