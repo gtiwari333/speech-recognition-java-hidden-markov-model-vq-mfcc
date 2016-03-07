@@ -1,5 +1,8 @@
-# Java Speech Recognition using Hidden Markov Model / Vector Quantization / MFCC 
+## Java Speech Recognition using Hidden Markov Model / Vector Quantization / MFCC 
+
+
 Automatically exported from code.google.com/p/speech-recognition-java-hidden-markov-model-vq-mfcc
+
 ===
 
 ####Accompanying project report
