@@ -7,13 +7,13 @@
  */
 package org.ioe.tprsa.db;
 
+import org.ioe.tprsa.classify.speech.CodeBookDictionary;
+import org.ioe.tprsa.classify.speech.HMMModel;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import org.ioe.tprsa.classify.speech.CodeBookDictionary;
-import org.ioe.tprsa.classify.speech.HMMModel;
 
 /**
  * @author Ganesh Tiwari
@@ -36,7 +36,7 @@ public class ObjectIODataBase implements DataBase {
 	/**
 	 * the file name to same codebook, adds .cbk extension automatically
 	 */
-	String			CODEBOOKFILENAME	= "codebook";
+	final String			CODEBOOKFILENAME	= "codebook";
 	String			currentModelType;
 
 	/**
@@ -68,7 +68,7 @@ public class ObjectIODataBase implements DataBase {
 	public Model readModel( String name ) throws Exception {
 		Model model = null;
 		if ( type.equalsIgnoreCase( "hmm" ) ) {
-			ObjectIO< HMMModel > oio = new ObjectIO< HMMModel >( );
+			ObjectIO< HMMModel > oio = new ObjectIO<>();
 			model = new HMMModel( );
 			model = oio.readModel( CURRENTFOLDER + File.separator + name + "." + type );
 			//            System.out.println("Type " + type);
@@ -76,7 +76,7 @@ public class ObjectIODataBase implements DataBase {
 			// System.out.println(model);
 		}
 		if ( type.equalsIgnoreCase( "cbk" ) ) {
-			ObjectIO< CodeBookDictionary > oio = new ObjectIO< CodeBookDictionary >( );
+			ObjectIO< CodeBookDictionary > oio = new ObjectIO<>();
 			model = new CodeBookDictionary( );
 			model = oio.readModel( CURRENTFOLDER + File.separator + CODEBOOKFILENAME + "." + type );
 			//            System.out.println("Read ::::: " + DBROOTFOLDER + "\\" + CURRENTFOLDER + "\\" + CODEBOOKFILENAME + "." + type);
@@ -102,12 +102,12 @@ public class ObjectIODataBase implements DataBase {
 	public void saveModel( Model model, String name ) throws Exception{
 
 		if ( type.equalsIgnoreCase( "hmm" ) ) {
-			ObjectIO< HMMModel > oio = new ObjectIO< HMMModel >( );
+			ObjectIO< HMMModel > oio = new ObjectIO<>();
 			oio.setModel( ( HMMModel ) model );
 			oio.saveModel( CURRENTFOLDER + File.separator + name + "." + type );
 		}
 		if ( type.equalsIgnoreCase( "cbk" ) ) {
-			ObjectIO< CodeBookDictionary > oio = new ObjectIO< CodeBookDictionary >( );
+			ObjectIO< CodeBookDictionary > oio = new ObjectIO<>();
 			oio.setModel( ( CodeBookDictionary ) model );
 			oio.saveModel( CURRENTFOLDER + File.separator + CODEBOOKFILENAME + "." + type );
 		}

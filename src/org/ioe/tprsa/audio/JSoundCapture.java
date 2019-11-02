@@ -7,14 +7,14 @@
  */
 package org.ioe.tprsa.audio;
 
-import java.awt.BasicStroke;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Toolkit;
+import org.ioe.tprsa.util.MessageType;
+
+import javax.sound.sampled.*;
+import javax.swing.*;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.SoftBevelBorder;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.font.FontRenderContext;
@@ -29,25 +29,6 @@ import java.io.IOException;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 import java.util.Vector;
-
-import javax.sound.sampled.AudioFileFormat;
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.SourceDataLine;
-import javax.sound.sampled.TargetDataLine;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.SoftBevelBorder;
-
-import org.ioe.tprsa.util.MessageType;
 
 /**
  * Capture/Playback sample. Record audio in different formats and then playback the recorded audio. The captured audio can be saved either as a WAVE, AU or
@@ -66,21 +47,23 @@ public class JSoundCapture extends JPanel implements ActionListener {
 	float[]						audioData			= null;
 	final int					BUFFER_SIZE			= 16384;
 	int							counter				= 0;
-	FormatControlConf			formatControls		= new FormatControlConf( );			// @jve:decl-index=0:
-	Capture						capture				= new Capture( );					// @jve:decl-index=0:
-	Playback					playback			= new Playback( );					// @jve:decl-index=0:
-	WaveData					wd;
+	final FormatControlConf			formatControls		= new FormatControlConf( );			// @jve:decl-index=0:
+	final Capture						capture				= new Capture( );					// @jve:decl-index=0:
+	final Playback					playback			= new Playback( );					// @jve:decl-index=0:
+	final WaveData					wd;
 	AudioInputStream			audioInputStream;										// @jve:decl-index=0:
 	SamplingGraph				samplingGraph;
-	JButton						playB, captB, pausB;
-	JButton						saveB;
+	final JButton						playB;
+	final JButton captB;
+	final JButton pausB;
+	final JButton						saveB;
 	String						errStr;
 	double						duration, seconds;
 	File						file;													// @jve:decl-index=0:
-	Vector< Line2D.Double >		lines				= new Vector< Line2D.Double >( );	// @jve:decl-index=0:
-	boolean						isDrawingRequired;
-	boolean						isSaveRequired;
-	JPanel						innerPanel;
+	final Vector< Line2D.Double >		lines				= new Vector<>();	// @jve:decl-index=0:
+	final boolean						isDrawingRequired;
+	final boolean						isSaveRequired;
+	final JPanel						innerPanel;
 	String						saveFileName		= null;								// @jve:decl-index=0:
 
 	/**
@@ -521,12 +504,9 @@ public class JSoundCapture extends JPanel implements ActionListener {
 			} catch ( LineUnavailableException ex ) {
 				shutDown( "Unable to open the line: " + ex );
 				return;
-			} catch ( SecurityException ex ) {
-				shutDown( ex.toString( ) );
-				// JavaSound.showInfoDialog();
-				return;
 			} catch ( Exception ex ) {
 				shutDown( ex.toString( ) );
+				// JavaSound.showInfoDialog();
 				return;
 			}
 
@@ -596,9 +576,9 @@ public class JSoundCapture extends JPanel implements ActionListener {
 
 		private Thread				thread;
 		private Font				font10				= new Font( "serif", Font.PLAIN, 10 );
-		private Font				font12				= new Font( "serif", Font.PLAIN, 12 );
-		Color						jfcBlue				= new Color( 204, 204, 255 );
-		Color						pink				= new Color( 255, 175, 175 );
+		private final Font				font12				= new Font( "serif", Font.PLAIN, 12 );
+		final Color						jfcBlue				= new Color( 204, 204, 255 );
+		final Color						pink				= new Color( 255, 175, 175 );
 		AudioFormat					format;
 
 		public SamplingGraph( ) {
@@ -683,12 +663,12 @@ public class JSoundCapture extends JPanel implements ActionListener {
 				// paint during capture
 				g2.setColor( Color.black );
 				g2.setFont( font12 );
-				g2.drawString( "Length: " + String.valueOf( seconds ), 3, h - 4 );
+				g2.drawString( "Length: " + seconds, 3, h - 4 );
 			} else {
 				// paint during playback
 				g2.setColor( Color.black );
 				g2.setFont( font12 );
-				g2.drawString( "Length: " + String.valueOf( duration ) + "    Position: " + String.valueOf( seconds ), 3, h - 4 );
+				g2.drawString( "Length: " + duration + "    Position: " + seconds, 3, h - 4 );
 
 				if ( audioInputStream != null ) {
 					// .. render sampling graph ..
@@ -741,7 +721,7 @@ public class JSoundCapture extends JPanel implements ActionListener {
 				}
 
 				try {
-					thread.sleep( 100 );
+					Thread.sleep( 100 );
 				} catch ( Exception e ) {
 					break;
 				}
@@ -750,7 +730,7 @@ public class JSoundCapture extends JPanel implements ActionListener {
 
 				while ( ( capture.line != null && !capture.line.isActive( ) ) || ( playback.line != null && !playback.line.isOpen( ) ) ) {
 					try {
-						thread.sleep( 10 );
+						Thread.sleep( 10 );
 					} catch ( Exception e ) {
 						break;
 					}
@@ -761,7 +741,7 @@ public class JSoundCapture extends JPanel implements ActionListener {
 		}
 	} // End class SamplingGraph
 
-	public static void main( String s[] ) {
+	public static void main(String[] s) {
 		// boolean isDrawingRequired, boolean isSaveRequired
 		JSoundCapture capturePlayback = new JSoundCapture( true, true );
 		JFrame f = new JFrame( "Capture/Playback/Save/Read for Speaker Data" );

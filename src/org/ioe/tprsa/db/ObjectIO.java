@@ -7,11 +7,7 @@
  */
 package org.ioe.tprsa.db;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 
 /**
  * This Class works for both any object <code><T></code>, which implements the Model interface
@@ -21,9 +17,7 @@ import java.io.ObjectOutputStream;
  */
 public class ObjectIO< T > {
 
-	private ObjectInputStream	input;
-	private ObjectOutputStream	output;
-	T							model;
+    T							model;
 
 	/**
 	 * default constructor of modelDB
@@ -55,7 +49,7 @@ public class ObjectIO< T > {
 		
 
 		// open file
-		output = new ObjectOutputStream( new FileOutputStream( file ) );
+        ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream(file));
 		// save model
 		output.writeObject( model );
 		output.close( );
@@ -69,7 +63,7 @@ public class ObjectIO< T > {
 	 */
 	public T readModel( String filePath ) throws Exception {
 		// open file
-		input = new ObjectInputStream( new FileInputStream( filePath ) );
+        ObjectInputStream input = new ObjectInputStream(new FileInputStream(filePath));
 		// read
 		model = ( T ) input.readObject( );
 		input.close( );

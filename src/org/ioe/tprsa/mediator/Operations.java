@@ -7,10 +7,6 @@
  */
 package org.ioe.tprsa.mediator;
 
-import java.io.File;
-import java.util.List;
-import java.util.ArrayList;
-
 import org.ioe.tprsa.audio.FeatureExtract;
 import org.ioe.tprsa.audio.FormatControlConf;
 import org.ioe.tprsa.audio.PreProcess;
@@ -24,28 +20,31 @@ import org.ioe.tprsa.db.ObjectIODataBase;
 import org.ioe.tprsa.db.TrainingTestingWaveFiles;
 import org.ioe.tprsa.util.ArrayWriter;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author Ganesh Tiwari
  */
 public class Operations {
 
 	TrainingTestingWaveFiles	trainTestWavs;
-	FormatControlConf			fc					= new FormatControlConf( );
-	int							samplingRate		= ( int ) fc.getRate( );
+	final FormatControlConf			fc					= new FormatControlConf( );
+	final int							samplingRate		= ( int ) fc.getRate( );
 	// int samplePerFrame = 256;//16ms for 8 khz
-	int							samplePerFrame		= 512;							// 23.22ms
-	int							FEATUREDIMENSION	= 39;
+	final int							samplePerFrame		= 512;							// 23.22ms
+	final int							FEATUREDIMENSION	= 39;
 	List< String >				words;
 	String[]					users;
 	File[][]					wavFiles;
 	FeatureExtract				fExt;
-	WaveData					wd;
+	final WaveData					wd;
 	PreProcess					prp;
 	Codebook					cb;
-	List< double[] >			allFeaturesList		= new ArrayList< double[] >( );
+	final List< double[] >			allFeaturesList		= new ArrayList<>();
 	HiddenMarkov				mkv;
 	DataBase					db;
-	private HiddenMarkov		hmmModels[];
 
 	public Operations( ) {
 		wd = new WaveData( );
@@ -55,24 +54,24 @@ public class Operations {
 		trainTestWavs = new TrainingTestingWaveFiles( "train" );
 		int totalFrames = 0;
 		wavFiles = trainTestWavs.readWaveFilesList( );
-		for ( int i = 0; i < wavFiles.length; i++ ) {
-			for ( int j = 0; j < wavFiles[ i ].length; j++ ) {
-				System.out.println( "Currently :::" + wavFiles[ i ][ j ].getAbsoluteFile( ) );
-				FeatureVector feature = extractFeatureFromFile( wavFiles[ i ][ j ] );
-				for ( int k = 0; k < feature.getNoOfFrames( ); k++ ) {
-					allFeaturesList.add( feature.getFeatureVector( )[ k ] );
+		for (File[] wavFile : wavFiles) {
+			for (int j = 0; j < wavFile.length; j++) {
+				System.out.println("Currently :::" + wavFile[j].getAbsoluteFile());
+				FeatureVector feature = extractFeatureFromFile(wavFile[j]);
+				for (int k = 0; k < feature.getNoOfFrames(); k++) {
+					allFeaturesList.add(feature.getFeatureVector()[k]);
 					totalFrames++;//
 				}
 			}
 		}
 		System.out.println( "total frames  " + totalFrames + "  allFeaturesList.size   " + allFeaturesList.size( ) );
 		// make a single 2d array of all features
-		double allFeatures[][] = new double[ totalFrames ][ FEATUREDIMENSION ];
+		double[][] allFeatures = new double[ totalFrames ][ FEATUREDIMENSION ];
 		for ( int i = 0; i < totalFrames; i++ ) {
 			double[] tmp = allFeaturesList.get( i );
 			allFeatures[ i ] = tmp;
 		}
-		Points pts[] = new Points[ totalFrames ];
+		Points[] pts = new Points[ totalFrames ];
 		for ( int j = 0; j < totalFrames; j++ ) {
 			pts[ j ] = new Points( allFeatures[ j ] );
 		}
@@ -91,7 +90,7 @@ public class Operations {
 		trainTestWavs = new TrainingTestingWaveFiles( "train" );
 		cb = new Codebook( );
 		// for each training word
-		int quantized[][];
+		int[][] quantized;
 		// extract features
 		wavFiles = trainTestWavs.readWaveFilesList( );
 		words = trainTestWavs.readWordWavFolder( );
@@ -143,7 +142,7 @@ public class Operations {
 		Points[] pts = getPointsFromFeatureVector( feature );
 		cb = new Codebook( );
 		// quantize using Codebook
-		int quantized[] = cb.quantize( pts );
+		int[] quantized = cb.quantize( pts );
 
 		// read registered/trained words
 		db = new ObjectIODataBase( );
@@ -152,14 +151,14 @@ public class Operations {
 		db = null;
 		System.out.println( "registred words ::: count : " + words.size( ) );
 		ArrayWriter.printStringArrayToConole( words );
-		hmmModels = new HiddenMarkov[ words.size( ) ];
+		HiddenMarkov[] hmmModels = new HiddenMarkov[words.size()];
 
 		// read hmmModels
 		for ( int i = 0; i < words.size( ); i++ ) {
 			hmmModels[ i ] = new HiddenMarkov( words.get( i ) );
 		}
 		// find the likelihood by viterbi decoding of quantized sequence
-		double likelihoods[] = new double[ words.size( ) ];
+		double[] likelihoods = new double[ words.size( ) ];
 		for ( int j = 0; j < words.size( ); j++ ) {
 			likelihoods[ j ] = hmmModels[ j ].viterbi( quantized );
 			System.out.println( "Likelihood with " + words.get( j ) + " is " + likelihoods[ j ] );
@@ -189,7 +188,6 @@ public class Operations {
 	}
 
 	/**
-	 * @param byteArray
 	 * @return
 	 * @throws Exception
 	 */
@@ -217,7 +215,7 @@ public class Operations {
 	 */
 	private Points[] getPointsFromFeatureVector( FeatureVector features ) {
 		// get Points object from all feature vector
-		Points pts[] = new Points[ features.getFeatureVector( ).length ];
+		Points[] pts = new Points[ features.getFeatureVector( ).length ];
 		for ( int j = 0; j < features.getFeatureVector( ).length; j++ ) {
 			pts[ j ] = new Points( features.getFeatureVector( )[ j ] );
 		}
@@ -232,8 +230,8 @@ public class Operations {
 		db = new ObjectIODataBase( );
 		db.setType( "hmm" );
 		words = db.readRegistered( );
-		for ( int i = 0; i < words.size( ); i++ ) {
-			if ( words.get( i ).equalsIgnoreCase( word ) ) {
+		for (String s : words) {
+			if (s.equalsIgnoreCase(word)) {
 				return true;// word found
 			}
 		}
@@ -247,16 +245,16 @@ public class Operations {
 		return true;
 	}
 
-	double	test0[][]	=																																																																																	// user0
+	double[][] test0 =																																																																																	// user0
 							{ { 1.0, 2.5, 5.0, 10, 3.0, 8.0, 4.0, 45.0 }, { 1.0, 2.0, 4.0, 10, 3.0, 9.0, 3.5, 52.0 }, { 1.0, 2.2, 5.0, 11, 3.0, 9.0, 4.0, 52.0 }, { 1.0, 3.0, 5.0, 9, 3.0, 10.0, 3.1, 51.0 }, { 1.0, 2.0, 6.0, 10, 3.0, 9.0, 4.0, 54.0 }, { 1.0, 2.2, 5.0, 12, 3.0, 8.0, 4.0, 52.0 } };
-	double	test1[][]	=																																																																																	// user1
+	double[][] test1 =																																																																																	// user1
 							{ { 2.0, 2.5, 5.0, 20, 3.0, 18.0, 4.0, 150.0 }, { 2.0, 2.0, 4.0, 19, 3.0, 19.0, 3.5, 142.0 }, { 2.0, 2.5, 5.0, 20, 3.0, 19.0, 4.0, 150.0 }, { 2.0, 3.0, 5.0, 20, 3.0, 18.0, 3.1, 151.0 }, { 2.0, 2.0, 6.0, 20, 3.0, 19.0, 4.0, 150.0 }, { 2.0, 2.7, 5.0, 22, 3.0, 18.0, 4.0, 145.0 } };
-	double	test2[][]	=																																																																																	// suer
+	double[][] test2 =																																																																																	// suer
 							{ { 12.0, 2.5, 5.0, 30, 13.0, 18.0, 4.0, 10.0 }, { 10.0, 2.0, 4.0, 30, 13.0, 19.0, 3.5, 12.0 }, { 12.0, 2.5, 5.0, 33, 13.0, 19.0, 4.0, 10.0 }, { 9.0, 3.0, 5.0, 30, 13.0, 18.0, 3.1, 11.0 }, { 11.0, 2.0, 6.0, 30, 13.0, 19.0, 4.0, 10.0 }, { 12.0, 2.7, 5.0, 31, 13.0, 18.0, 4.0, 12.0 } };
-	double	test3[][]	=																																																																																	// suer
+	double[][] test3 =																																																																																	// suer
 							{ { 322.0, 2.5, 5.0, 30, 303.0, 18.0, 4.0, 300.0 }, { 312.0, 2.0, 4.0, 30, 353.0, 18.0, 3.5, 312.0 }, { 312.0, 2.5, 5.0, 30, 313.0, 19.0, 4.0, 300.0 }, { 322.0, 3.0, 5.0, 30, 303.0, 16.0, 3.1, 311.0 }, { 312.0, 2.0, 6.0, 30, 313.0, 19.0, 4.0, 300.0 }, { 332.0, 2.7, 5.0, 30, 313.0, 12.0, 4.0, 302.0 } };
-	double	test4[][]	= { { 412.0, 2.5, 5.0, 30, 400.0, 18.0, 41.0, 14.0 }, { 412.0, 2.0, 8.0, 30, 413.0, 19.0, 43.5, 12.0 }, { 400.0, 1.5, 5.0, 30, 413.0, 19.0, 44.0, 9.0 }, { 412.0, 3.0, 3.0, 30, 413.0, 18.0, 43.1, 11.0 }, { 412.0, 2.0, 6.0, 30, 433.0, 19.0, 44.0, 15.0 }, { 400.0, 1.7, 9.0, 30, 433.0, 28.0, 40.0, 12.0 } };
-	double	train[][][]	= { {																																																																																// user0
+	double[][] test4 = { { 412.0, 2.5, 5.0, 30, 400.0, 18.0, 41.0, 14.0 }, { 412.0, 2.0, 8.0, 30, 413.0, 19.0, 43.5, 12.0 }, { 400.0, 1.5, 5.0, 30, 413.0, 19.0, 44.0, 9.0 }, { 412.0, 3.0, 3.0, 30, 413.0, 18.0, 43.1, 11.0 }, { 412.0, 2.0, 6.0, 30, 433.0, 19.0, 44.0, 15.0 }, { 400.0, 1.7, 9.0, 30, 433.0, 28.0, 40.0, 12.0 } };
+	double[][][] train = { {																																																																																// user0
 									{ 1.0, 2.5, 5.0, 10, 3.0, 8.0, 4.0, 50.0 }, { 1.0, 2.0, 4.0, 10, 3.0, 9.0, 3.5, 52.0 }, { 1.0, 2.5, 5.0, 10, 3.0, 9.0, 4.0, 40.0 }, { 1.0, 3.0, 5.0, 10, 3.0, 10.0, 3.1, 51.0 }, { 1.0, 2.0, 6.0, 10, 3.0, 9.0, 4.0, 50.0 }, { 1.0, 2.7, 5.0, 10, 3.0, 8.0, 4.0, 59.0 } }, {											// user1
 									{ 2.0, 2.5, 5.0, 20, 3.0, 18.0, 4.0, 150.0 }, { 2.0, 2.0, 4.0, 20, 3.0, 19.0, 3.5, 152.0 }, { 2.0, 2.5, 5.0, 20, 3.0, 19.0, 4.0, 150.0 }, { 2.0, 3.0, 5.0, 20, 3.0, 18.0, 3.1, 151.0 }, { 2.0, 2.0, 6.0, 20, 3.0, 19.0, 4.0, 150.0 }, { 2.0, 2.7, 5.0, 20, 3.0, 18.0, 4.0, 152.0 } }, {									// user2
 									{ 12.0, 2.5, 5.0, 30, 13.0, 18.0, 4.0, 10.0 }, { 12.0, 2.0, 4.0, 30, 13.0, 19.0, 3.5, 12.0 }, { 12.0, 2.5, 5.0, 30, 13.0, 19.0, 4.0, 10.0 }, { 12.0, 3.0, 5.0, 30, 13.0, 18.0, 3.1, 11.0 }, { 12.0, 2.0, 6.0, 30, 13.0, 19.0, 4.0, 10.0 }, { 12.0, 2.7, 5.0, 30, 13.0, 18.0, 4.0, 12.0 } }, {							// user3

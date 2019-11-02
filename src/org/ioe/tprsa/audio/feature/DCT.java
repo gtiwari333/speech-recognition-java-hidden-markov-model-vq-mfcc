@@ -18,15 +18,13 @@ public class DCT {
 	/**
 	 * number of mfcc coeffs
 	 */
-	int numCepstra;
+	final int numCepstra;
 	/**
 	 * number of Mel Filters
 	 */
-	int M;
+	final int M;
 
 	/**
-	 * @param len
-	 *            length of array, i.e., number of features
 	 * @param M
 	 *            numbe of Mel Filters
 	 * @return
@@ -36,8 +34,8 @@ public class DCT {
 		this.M = M;
 	}
 
-	public double[] performDCT(double y[]) {
-		double cepc[] = new double[numCepstra];
+	public double[] performDCT(double[] y) {
+		double[] cepc = new double[numCepstra];
 		// perform DCT
 		for (int n = 1; n <= numCepstra; n++) {
 			for (int i = 1; i <= M; i++) {

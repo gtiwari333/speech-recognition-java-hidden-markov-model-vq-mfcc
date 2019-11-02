@@ -7,30 +7,6 @@
  */
 package org.ioe.tprsa.ui;
 
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.io.File;
-import java.util.List;
-
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTabbedPane;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-
 import org.ioe.tprsa.audio.JSoundCapture;
 import org.ioe.tprsa.db.DataBase;
 import org.ioe.tprsa.db.ObjectIODataBase;
@@ -38,6 +14,11 @@ import org.ioe.tprsa.db.TrainingTestingWaveFiles;
 import org.ioe.tprsa.mediator.Operations;
 import org.ioe.tprsa.util.ErrorManager;
 import org.ioe.tprsa.util.Utils;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+import java.util.List;
 
 /**
  * Main application- contains GUI and main method - train / test / data collection all can be done from here
@@ -60,7 +41,7 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 
 	private JButton				getWordButton1			= null;
 
-	private Operations			opr						= new Operations( );
+	private final Operations			opr						= new Operations( );
 	private JLabel				aboutLBL;
 	private JLabel				statusLBLRecognize;
 	private JTextField			addWordToCombo			= null;
@@ -104,19 +85,15 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 			jTabbedPane.addTab( "Verify Word", null, getVerifyWordPanel( ), null );
 			jTabbedPane.addTab( "Add Sample", null, getAddSamplePanel( ), null );
 			jTabbedPane.addTab( "Run HMM Train", null, getRunTrainingPanel( ), null );
-			jTabbedPane.addChangeListener( new ChangeListener( ) {
-
-				@Override
-				public void stateChanged( ChangeEvent e ) {
-					System.out.println( "state changed" );
-					if ( jTabbedPane.getSelectedIndex( ) == 0 ) {
-						soundCapture.setSaveFileName( null );
-					} else if ( jTabbedPane.getSelectedIndex( ) == 1 ) {
-						soundCapture.setSaveFileName( "TrainWav" + File.separator + getWordsComboBoxAddWord( ).getSelectedItem( ) + File.separator + getWordsComboBoxAddWord( ).getSelectedItem( ) );
-					}
-
+			jTabbedPane.addChangeListener(e -> {
+				System.out.println( "state changed" );
+				if ( jTabbedPane.getSelectedIndex( ) == 0 ) {
+					soundCapture.setSaveFileName( null );
+				} else if ( jTabbedPane.getSelectedIndex( ) == 1 ) {
+					soundCapture.setSaveFileName( "TrainWav" + File.separator + getWordsComboBoxAddWord( ).getSelectedItem( ) + File.separator + getWordsComboBoxAddWord( ).getSelectedItem( ) );
 				}
-			} );
+
+			});
 		}
 		return jTabbedPane;
 	}
@@ -171,25 +148,22 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 	private JButton getBtnVerify( ) {
 		if ( btnVerify == null ) {
 			btnVerify = new JButton( "Verify" );
-			btnVerify.addActionListener( new ActionListener( ) {
+			btnVerify.addActionListener(e -> {
+				if ( soundCapture.isSoundDataAvailable( ) && getWordsComboBoxVerify( ).getItemCount( ) > 0 ) {
 
-				public void actionPerformed( ActionEvent e ) {
-					if ( soundCapture.isSoundDataAvailable( ) && getWordsComboBoxVerify( ).getItemCount( ) > 0 ) {
+					try {
 
-						try {
-
-							String recWord = opr.hmmGetWordFromAmplitureArray( soundCapture.getAudioData( ) );
-							if ( recWord.equalsIgnoreCase( getWordsComboBoxVerify( ).getSelectedItem( ).toString( ) ) ) {
-								getStatusLblRecognize( ).setText( "Verified" );
-							} else {
-								getStatusLblRecognize( ).setText( "Not Verified" );
-							}
-						} catch ( Exception e2 ) {
-							e2.printStackTrace( );
+						String recWord = opr.hmmGetWordFromAmplitureArray( soundCapture.getAudioData( ) );
+						if ( recWord.equalsIgnoreCase( getWordsComboBoxVerify( ).getSelectedItem( ).toString( ) ) ) {
+							getStatusLblRecognize( ).setText( "Verified" );
+						} else {
+							getStatusLblRecognize( ).setText( "Not Verified" );
 						}
+					} catch ( Exception e2 ) {
+						e2.printStackTrace( );
 					}
 				}
-			} );
+			});
 			btnVerify.setBounds( 126, 111, 89, 24 );
 		}
 		return btnVerify;
@@ -237,21 +211,18 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 	private JButton getGetWordButton( ) {
 		if ( getWordButton == null ) {
 			getWordButton = new JButton( "Recognize With Just Recorded" );
-			getWordButton.addActionListener( new ActionListener( ) {
+			getWordButton.addActionListener(arg0 -> {
+				if ( soundCapture.isSoundDataAvailable( ) && getWordsComboBoxVerify( ).getItemCount( ) > 0 ) {
 
-				public void actionPerformed( ActionEvent arg0 ) {
-					if ( soundCapture.isSoundDataAvailable( ) && getWordsComboBoxVerify( ).getItemCount( ) > 0 ) {
+					try {
 
-						try {
-
-							getStatusLblRecognize( ).setText( opr.hmmGetWordFromAmplitureArray( soundCapture.getAudioData( ) ) );
-						} catch ( Exception e ) {
-							e.printStackTrace( );
-						}
-
+						getStatusLblRecognize( ).setText( opr.hmmGetWordFromAmplitureArray( soundCapture.getAudioData( ) ) );
+					} catch ( Exception e ) {
+						e.printStackTrace( );
 					}
+
 				}
-			} );
+			});
 			getWordButton.setBounds( new Rectangle( 13, 8, 202, 24 ) );
 		}
 		return getWordButton;
@@ -272,7 +243,7 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 				for ( String string: regs ) {
 					wordsComboBoxVerify.addItem( string );
 				}
-			} catch ( Exception e ) {
+			} catch ( Exception ignored) {
 			}
 			wordsComboBoxVerify.setBounds( new Rectangle( 13, 75, 202, 24 ) );
 		}
@@ -285,19 +256,13 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 			wordsComboBoxAddWord = new JComboBox( );
 			try {
 				List< String > regs = ttwf.readWordWavFolder( );
-				for ( int i = 0; i < regs.size( ); i++ ) {
-					wordsComboBoxAddWord.addItem( regs.get( i ) );
+				for (String reg : regs) {
+					wordsComboBoxAddWord.addItem(reg);
 				}
-			} catch ( Exception e ) {
+			} catch ( Exception ignored) {
 			}
 			wordsComboBoxAddWord.setBounds( new Rectangle( 11, 103, 202, 24 ) );
-			wordsComboBoxAddWord.addItemListener( new ItemListener( ) {
-
-				@Override
-				public void itemStateChanged( ItemEvent e ) {
-					soundCapture.setSaveFileName( "TrainWav" + File.separator + getWordsComboBoxAddWord( ).getSelectedItem( ) + File.separator + getWordsComboBoxAddWord( ).getSelectedItem( ) );
-				}
-			} );
+			wordsComboBoxAddWord.addItemListener(e -> soundCapture.setSaveFileName( "TrainWav" + File.separator + getWordsComboBoxAddWord( ).getSelectedItem( ) + File.separator + getWordsComboBoxAddWord( ).getSelectedItem( ) ));
 		}
 		return wordsComboBoxAddWord;
 	}
@@ -310,23 +275,20 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 	private JButton getGetWordButton1( ) {
 		if ( getWordButton1 == null ) {
 			getWordButton1 = new JButton( "Recognize a Saved WAV File" );
-			getWordButton1.addActionListener( new ActionListener( ) {
+			getWordButton1.addActionListener(e -> {
+				System.out.println( "getting word file totest" );
+				File f = getTestFile( );
+				if ( f != null ) {
 
-				public void actionPerformed( ActionEvent e ) {
-					System.out.println( "getting word file totest" );
-					File f = getTestFile( );
-					if ( f != null ) {
+					try {
 
-						try {
-
-							getStatusLblRecognize( ).setText( opr.hmmGetWordFromFile( f ) );
-						} catch ( Exception e2 ) {
-							e2.printStackTrace( );
-						}
-
+						getStatusLblRecognize( ).setText( opr.hmmGetWordFromFile( f ) );
+					} catch ( Exception e2 ) {
+						e2.printStackTrace( );
 					}
+
 				}
-			} );
+			});
 			getWordButton1.setBounds( new Rectangle( 225, 8, 189, 24 ) );
 		}
 		return getWordButton1;
@@ -396,28 +358,25 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 	private JButton getAddWordToComboBtn( ) {
 		if ( addWordToComboBtn == null ) {
 			addWordToComboBtn = new JButton( "Add Word" );
-			addWordToComboBtn.addActionListener( new ActionListener( ) {
-
-				public void actionPerformed( ActionEvent e ) {
-					String newWord = Utils.clean( getAddWordToCombo( ).getText( ) );
-					boolean isAlreadyRegistered = false;
-					if ( !newWord.isEmpty( ) ) {
-						// already in combo box
-						for ( int i = 0; i < getWordsComboBoxAddWord( ).getItemCount( ); i++ ) {
-							if ( getWordsComboBoxAddWord( ).getItemAt( i ).toString( ).equalsIgnoreCase( newWord ) ) {
-								isAlreadyRegistered = true;
-								break;
-							}
-						}
-						// if not add
-						if ( !isAlreadyRegistered ) {
-							getWordsComboBoxAddWord( ).addItem( getAddWordToCombo( ).getText( ) );
-							getWordsComboBoxAddWord( ).repaint( );
-							getAddWordToCombo( ).setText( "" );
+			addWordToComboBtn.addActionListener(e -> {
+				String newWord = Utils.clean( getAddWordToCombo( ).getText( ) );
+				boolean isAlreadyRegistered = false;
+				if ( !newWord.isEmpty( ) ) {
+					// already in combo box
+					for ( int i = 0; i < getWordsComboBoxAddWord( ).getItemCount( ); i++ ) {
+						if ( getWordsComboBoxAddWord( ).getItemAt( i ).toString( ).equalsIgnoreCase( newWord ) ) {
+							isAlreadyRegistered = true;
+							break;
 						}
 					}
+					// if not add
+					if ( !isAlreadyRegistered ) {
+						getWordsComboBoxAddWord( ).addItem( getAddWordToCombo( ).getText( ) );
+						getWordsComboBoxAddWord( ).repaint( );
+						getAddWordToCombo( ).setText( "" );
+					}
 				}
-			} );
+			});
 			addWordToComboBtn.setBounds( new Rectangle( 222, 42, 142, 24 ) );
 		}
 		return addWordToComboBtn;
@@ -432,27 +391,24 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 		if ( addTrainSampleBtn == null ) {
 			addTrainSampleBtn = new JButton( "Record" );
 			addTrainSampleBtn.setBounds( new Rectangle( 223, 103, 141, 24 ) );
-			addTrainSampleBtn.addActionListener( new ActionListener( ) {
+			addTrainSampleBtn.addActionListener(e -> {
+				if ( addTrainSampleBtn.getText( ).startsWith( "Record" ) ) {
+					soundCapture.startRecord( );
+					addTrainSampleBtn.setText( "Save Captured" );
+				} else if ( addTrainSampleBtn.getText( ).startsWith( "Save" ) ) {
+					// TODO: decouple path, may be singleton conf for path
+					soundCapture.setSaveFileName( "TrainWav" + File.separator + getWordsComboBoxAddWord( ).getSelectedItem( ) + File.separator + getWordsComboBoxAddWord( ).getSelectedItem( ) );
 
-				public void actionPerformed( ActionEvent e ) {
-					if ( addTrainSampleBtn.getText( ).startsWith( "Record" ) ) {
-						soundCapture.startRecord( );
-						addTrainSampleBtn.setText( "Save Captured" );
-					} else if ( addTrainSampleBtn.getText( ).startsWith( "Save" ) ) {
-						// TODO: decouple path, may be singleton conf for path
-						soundCapture.setSaveFileName( "TrainWav" + File.separator + getWordsComboBoxAddWord( ).getSelectedItem( ) + File.separator + getWordsComboBoxAddWord( ).getSelectedItem( ) );
-						
-						try {
+					try {
 
-							soundCapture.getFileNameAndSaveFile( );
-							addTrainSampleBtn.setText( "Record" );
-							
-						} catch ( Exception e2 ) {
-							e2.printStackTrace( );
-						}
+						soundCapture.getFileNameAndSaveFile( );
+						addTrainSampleBtn.setText( "Record" );
+
+					} catch ( Exception e2 ) {
+						e2.printStackTrace( );
 					}
 				}
-			} );
+			});
 		}
 		return addTrainSampleBtn;
 	}
@@ -466,16 +422,13 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 		} catch ( Exception e ) {
 			System.out.println( e.toString( ) );
 		}
-		SwingUtilities.invokeLater( new Runnable( ) {
+		SwingUtilities.invokeLater(() -> {
+			HMM_VQ_Speech_Recognition test = new HMM_VQ_Speech_Recognition( );
+			test.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
 
-			public void run( ) {
-				HMM_VQ_Speech_Recognition test = new HMM_VQ_Speech_Recognition( );
-				test.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
-
-				test.setResizable( false );
-				test.setVisible( true );
-			}
-		} );
+			test.setResizable( false );
+			test.setVisible( true );
+		});
 	}
 
 	private JLabel getLblChooseAWord( ) {
@@ -497,17 +450,14 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 	private JButton getGenerateCodeBookBtn( ) {
 		if ( generateCodeBookBtn == null ) {
 			generateCodeBookBtn = new JButton( "Generate CodeBook" );
-			generateCodeBookBtn.addActionListener( new ActionListener( ) {
+			generateCodeBookBtn.addActionListener(e -> {
+				try {
 
-				public void actionPerformed( ActionEvent e ) {
-					try {
-
-						opr.generateCodebook( );
-					} catch ( Exception e2 ) {
-						e2.printStackTrace( );
-					}
+					opr.generateCodebook( );
+				} catch ( Exception e2 ) {
+					e2.printStackTrace( );
 				}
-			} );
+			});
 			generateCodeBookBtn.setBounds( 10, 32, 167, 23 );
 		}
 		return generateCodeBookBtn;
@@ -516,17 +466,14 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 	private JButton getBtnNewButton_2( ) {
 		if ( btnNewButton_2 == null ) {
 			btnNewButton_2 = new JButton( "Train HMM" );
-			btnNewButton_2.addActionListener( new ActionListener( ) {
+			btnNewButton_2.addActionListener(e -> {
+				try {
+					opr.hmmTrain( );
+				} catch ( Exception e2 ) {
+					e2.printStackTrace( );
 
-				public void actionPerformed( ActionEvent e ) {
-					try {
-						opr.hmmTrain( );
-					} catch ( Exception e2 ) {
-						e2.printStackTrace( );
-
-					}
 				}
-			} );
+			});
 			btnNewButton_2.setBounds( 10, 74, 167, 23 );
 		}
 		return btnNewButton_2;

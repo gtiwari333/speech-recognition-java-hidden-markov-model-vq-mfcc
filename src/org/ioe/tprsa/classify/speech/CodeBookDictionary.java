@@ -7,10 +7,10 @@
  */
 package org.ioe.tprsa.classify.speech;
 
-import java.io.Serializable;
-
 import org.ioe.tprsa.classify.speech.vq.Centroid;
 import org.ioe.tprsa.db.Model;
+
+import java.io.Serializable;
 
 /**
  * @author Ganesh Tiwari

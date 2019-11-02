@@ -7,9 +7,9 @@
  */
 package org.ioe.tprsa.classify.speech;
 
-import java.io.Serializable;
-
 import org.ioe.tprsa.db.Model;
+
+import java.io.Serializable;
 
 /**
  * @author Ganesh Tiwari
@@ -23,9 +23,9 @@ public class HMMModel implements Serializable, Model {
 	protected int				num_states;
 	protected int				num_symbols;
 	protected int				num_obSeq;
-	protected double			transition[][];
-	protected double			output[][];
-	protected double			pi[];
+	protected double[][] transition;
+	protected double[][] output;
+	protected double[] pi;
 
 	public HMMModel( ) {
 	}

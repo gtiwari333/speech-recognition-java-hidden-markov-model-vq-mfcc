@@ -45,8 +45,8 @@ Please visit http://ocvolume.sourceforge.net.
 package org.ioe.tprsa.classify.speech.vq;
 
 import java.io.Serializable;
-import java.util.Vector;
 import java.util.Enumeration;
+import java.util.Vector;
 
 /**
  * last updated on June 15, 2002<br>
@@ -66,7 +66,7 @@ public class Centroid extends Points implements Serializable {
 	/**
 	 * stores the points that belong to this Centroid or cell
 	 */
-	protected Vector<Points> pts = new Vector<Points>(0);
+	protected Vector<Points> pts = new Vector<>(0);
 	/**
 	 * total number of points that belong to this Centroid or cell
 	 */
@@ -80,7 +80,7 @@ public class Centroid extends Points implements Serializable {
 	 * @param Co
 	 *            coordinates array
 	 */
-	public Centroid(double Co[]) {
+	public Centroid(double[] Co) {
 		super(Co);
 		total_pts = 0;
 	}
@@ -173,7 +173,7 @@ public class Centroid extends Points implements Serializable {
 	 * called by: codebook
 	 */
 	public void update() {
-		double sum_coordinates[] = new double[dimension];
+		double[] sum_coordinates = new double[dimension];
 		Points tmpPoint;
 		Enumeration enums = pts.elements();
 

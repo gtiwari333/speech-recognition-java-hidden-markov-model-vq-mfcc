@@ -15,7 +15,7 @@ public class FormatControlConf {
 	int						sampleSize;
 	boolean					bigEndian;
 	int						channels;
-	float					SAMPLING_RATE	= 22050.0f;
+	final float					SAMPLING_RATE	= 22050.0f;
 	float					rate;
 
 	public FormatControlConf( ) {

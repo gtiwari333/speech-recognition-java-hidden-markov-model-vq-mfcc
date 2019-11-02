@@ -19,7 +19,7 @@ public class Energy {
 	/**
      *
      */
-	private int samplePerFrame;
+	private final int samplePerFrame;
 
 	/**
 	 * 

@@ -16,21 +16,19 @@ import org.ioe.tprsa.audio.preProcessings.EndPointDetection;
  */
 public class PreProcess {
 
-	float[]				originalSignal;		// initial extracted PCM,
-	float[]				afterEndPtDetection;// after endPointDetection
+	final float[]				originalSignal;		// initial extracted PCM,
+	final float[]				afterEndPtDetection;// after endPointDetection
 	public int			noOfFrames;			// calculated total no of frames
-	int					samplePerFrame;		// how many samples in one frame
+	final int					samplePerFrame;		// how many samples in one frame
 	int					framedArrayLength;	// how many samples in framed array
 	public float[][]	framedSignal;
 	float[]				hammingWindow;
-	EndPointDetection	epd;
-	int					samplingRate;
+	final EndPointDetection	epd;
+	final int					samplingRate;
 
 	/**
 	 * constructor, all steps are called frm here
 	 * 
-	 * @param audioData
-	 *            extracted PCM data
 	 * @param samplePerFrame
 	 *            how many samples in one frame,=660 << frameDuration, typically 30; samplingFreq, typically 22Khz
 	 */
@@ -71,9 +69,8 @@ public class PreProcess {
 		framedSignal = new float[ noOfFrames ][ samplePerFrame ];
 		for ( int i = 0; i < noOfFrames; i++ ) {
 			int startIndex = ( i * samplePerFrame / 2 );
-			for ( int j = 0; j < samplePerFrame; j++ ) {
-				framedSignal[ i ][ j ] = afterEndPtDetection[ startIndex + j ];
-			}
+			if (samplePerFrame >= 0)
+				System.arraycopy(afterEndPtDetection, startIndex + 0, framedSignal[i], 0, samplePerFrame);
 		}
 	}
 

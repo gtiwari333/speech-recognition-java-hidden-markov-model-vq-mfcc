@@ -22,10 +22,8 @@ public class FeatureVector implements Serializable {
 	 */
 	private double[][] mfccFeature;
 	private double[][] featureVector;// all
-	private int noOfFrames;
-	private int noOfFeatures;
 
-	public FeatureVector() {
+    public FeatureVector() {
 	}
 
 	public double[][] getMfccFeature() {
@@ -41,16 +39,14 @@ public class FeatureVector implements Serializable {
 	}
 
 	public void setNoOfFrames(int noOfFrames) {
-		this.noOfFrames = noOfFrames;
-	}
+    }
 
 	public int getNoOfFeatures() {
 		return featureVector[0].length;
 	}
 
 	public void setNoOfFeatures(int noOfFeatures) {
-		this.noOfFeatures = noOfFeatures;
-	}
+    }
 
 	/**
 	 * returns feature vector

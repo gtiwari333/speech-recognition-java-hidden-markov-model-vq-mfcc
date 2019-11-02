@@ -99,7 +99,7 @@ public class Codebook {
 	 * @param size
 	 *            Codebook size
 	 */
-	public Codebook(Points tmpPt[], int size) {
+	public Codebook(Points[] tmpPt, int size) {
 		// update variables
 		this.pt = tmpPt;
 		this.codebook_size = size;
@@ -123,7 +123,7 @@ public class Codebook {
 	 * @param tmpPt
 	 *            training vectors
 	 */
-	public Codebook(Points tmpPt[]) {
+	public Codebook(Points[] tmpPt) {
 		this.pt = tmpPt;
 
 		// make sure there are enough training points to train the Codebook
@@ -153,10 +153,10 @@ public class Codebook {
 	}
 
 	private void showParameters() {
-		for (int c = 0; c < centroids.length; c++) {
+		for (Centroid centroid : centroids) {
 			// bw.write("c" + c + ": (");
 			for (int k = 0; k < dimension; k++) {
-				System.out.print(centroids[c].getCo(k) + "\t");
+				System.out.print(centroid.getCo(k) + "\t");
 			}
 			System.out.println();
 		}
@@ -177,12 +177,12 @@ public class Codebook {
 		centroids = new Centroid[1];
 
 		// then initialize it with (0, 0) coordinates
-		double origin[] = new double[dimension];
+		double[] origin = new double[dimension];
 		centroids[0] = new Centroid(origin);
 
 		// initially, all training points will belong to 1 single cell
-		for (int i = 0; i < pt.length; i++) {
-			centroids[0].add(pt[i], 0);
+		for (Points points : pt) {
+			centroids[0].add(points, 0);
 		}
 
 		// calls update to set the initial codevector as the average of all
@@ -200,16 +200,16 @@ public class Codebook {
 
 			// Iteration 2: perform K-means algorithm
 			do {
-				for (int i = 0; i < centroids.length; i++) {
-					distortion_before_update += centroids[i].getDistortion();
-					centroids[i].update();
+				for (Centroid value : centroids) {
+					distortion_before_update += value.getDistortion();
+					value.update();
 				}
 
 				// regroup
 				groupPtoC();
 
-				for (int i = 0; i < centroids.length; i++) {
-					distortion_after_update += centroids[i].getDistortion();
+				for (Centroid centroid : centroids) {
+					distortion_after_update += centroid.getDistortion();
 				}
 
 			} while (Math.abs(distortion_after_update - distortion_before_update) < MIN_DISTORTION);
@@ -227,8 +227,8 @@ public class Codebook {
 		CodeBookDictionary cbd = new CodeBookDictionary();
 		// no need to save all the points,
 		// must be removed in objectIO, to reduce the size of file
-		for (int i = 0; i < centroids.length; i++) {
-			centroids[i].pts.removeAllElements();
+		for (Centroid centroid : centroids) {
+			centroid.pts.removeAllElements();
 		}
 		cbd.setDimension(dimension);
 		cbd.setCent(centroids);
@@ -245,8 +245,8 @@ public class Codebook {
 	 */
 	protected void split() {
 		System.out.println("Centroids length now becomes " + centroids.length + 2);
-		Centroid temp[] = new Centroid[centroids.length * 2];
-		double tCo[][];
+		Centroid[] temp = new Centroid[centroids.length * 2];
+		double[][] tCo;
 		for (int i = 0; i < temp.length; i += 2) {
 			tCo = new double[2][dimension];
 			for (int j = 0; j < dimension; j++) {
@@ -273,8 +273,8 @@ public class Codebook {
 	 *            points to be quantized
 	 * @return quantized index array
 	 */
-	public int[] quantize(Points pts[]) {
-		int output[] = new int[pts.length];
+	public int[] quantize(Points[] pts) {
+		int[] output = new int[pts.length];
 		for (int i = 0; i < pts.length; i++) {
 			output[i] = closestCentroidToPoint(pts[i]);
 		}
@@ -290,11 +290,11 @@ public class Codebook {
 	 *            points to calculate the distortion with
 	 * @return distortion measure
 	 */
-	public double getDistortion(Points pts[]) {
+	public double getDistortion(Points[] pts) {
 		double dist = 0;
-		for (int i = 0; i < pts.length; i++) {
-			int index = closestCentroidToPoint(pts[i]);
-			double d = getDistance(pts[i], centroids[index]);
+		for (Points points : pts) {
+			int index = closestCentroidToPoint(points);
+			double d = getDistance(points, centroids[index]);
 			dist += d;
 		}
 		return dist;
@@ -329,8 +329,6 @@ public class Codebook {
 	 * calls: none<br>
 	 * called by: Codebook
 	 * 
-	 * @param pt
-	 *            Points
 	 * @return index number of the closest Centroid
 	 */
 	private int closestCentroidToCentroid(Centroid c) {
@@ -379,23 +377,23 @@ public class Codebook {
 	 */
 	private void groupPtoC() {
 		// find closest Centroid and assign Points to it
-		for (int i = 0; i < pt.length; i++) {
-			int index = closestCentroidToPoint(pt[i]);
-			centroids[index].add(pt[i], getDistance(pt[i], centroids[index]));
+		for (Points points : pt) {
+			int index = closestCentroidToPoint(points);
+			centroids[index].add(points, getDistance(points, centroids[index]));
 		}
 		// make sure that all centroids have at least one Points assigned to it
 		// no cell should be empty or else NaN error will occur due to division
 		// of 0 by 0
-		for (int i = 0; i < centroids.length; i++) {
-			if (centroids[i].getNumPts() == 0) {
+		for (Centroid centroid : centroids) {
+			if (centroid.getNumPts() == 0) {
 				// find the closest Centroid with more than one points assigned
 				// to it
-				int index = closestCentroidToCentroid(centroids[i]);
+				int index = closestCentroidToCentroid(centroid);
 				// find the closest Points in the closest Centroid's cell
-				int closestIndex = closestPoint(centroids[i], centroids[index]);
+				int closestIndex = closestPoint(centroid, centroids[index]);
 				Points closestPt = centroids[index].getPoint(closestIndex);
 				centroids[index].remove(closestPt, getDistance(closestPt, centroids[index]));
-				centroids[i].add(closestPt, getDistance(closestPt, centroids[i]));
+				centroid.add(closestPt, getDistance(closestPt, centroid));
 			}
 		}
 	}

@@ -43,9 +43,9 @@ public class ArrayWriter {
 		}
 		// write the array
 		// formatter.format("****** Array's Length %d ******", array.length);
-		for ( int i = 0; i < array.length; i++ ) {
-			formatter.format( "%d\n", array[ i ] );
-		}
+        for (int value : array) {
+            formatter.format("%d\n", value);
+        }
 		formatter.flush( );
 		formatter.close( );
 	}
@@ -57,9 +57,9 @@ public class ArrayWriter {
 	 *            input array
 	 */
 	public static void printIntArrayToConole( int[] array ) {
-		for ( int i = 0; i < array.length; i++ ) {
-			System.out.println( array[ i ] );
-		}
+        for (int value : array) {
+            System.out.println(value);
+        }
 	}
 
 	/**
@@ -80,9 +80,9 @@ public class ArrayWriter {
 		}
 		// write the array
 		// formatter.format("****** Array's Length %d ******", array.length);
-		for ( int i = 0; i < array.length; i++ ) {
-			formatter.format( "%f\n", array[ i ] );
-		}
+        for (double v : array) {
+            formatter.format("%f\n", v);
+        }
 		formatter.flush( );
 		formatter.close( );
 	}
@@ -105,11 +105,11 @@ public class ArrayWriter {
 		}
 		// write the array
 		// formatter.format("****** Array's Length %d ******", array.length);
-		for ( int i = 0; i < array.length; i++ ) {
-			for ( int j = 0; j < array[ i ].length; j++ ) {
-				formatter.format( "%f\n", array[ i ][ j ] );
-			}
-		}
+        for (double[] doubles : array) {
+            for (int j = 0; j < doubles.length; j++) {
+                formatter.format("%f\n", doubles[j]);
+            }
+        }
 
 		formatter.flush( );
 		formatter.close( );
@@ -122,9 +122,9 @@ public class ArrayWriter {
 	 *            input array
 	 */
 	public static void printDoubleArrayToConole( double[] array ) {
-		for ( int i = 0; i < array.length; i++ ) {
-			System.out.println( array[ i ] );
-		}
+        for (double v : array) {
+            System.out.println(v);
+        }
 	}
 
 	/**
@@ -134,12 +134,12 @@ public class ArrayWriter {
 	 *            input array
 	 */
 	public static void print2DTabbedDoubleArrayToConole( double[][] array ) {
-		for ( int i = 0; i < array.length; i++ ) {
-			for ( int j = 0; j < array[ i ].length; j++ ) {
-				System.out.print( array[ i ][ j ] + "\t" );
-			}
-			System.out.println( );
-		}
+        for (double[] doubles : array) {
+            for (int j = 0; j < doubles.length; j++) {
+                System.out.print(doubles[j] + "\t");
+            }
+            System.out.println();
+        }
 
 	}
 
@@ -166,12 +166,12 @@ public class ArrayWriter {
 	 *            input array
 	 */
 	public static void print2DDoubleArrayToConole( double[][] array ) {
-		for ( int i = 0; i < array.length; i++ ) {
-			for ( int j = 0; j < array[ i ].length; j++ ) {
-				System.out.println( array[ i ][ j ] );
-			}
-			System.out.println( );
-		}
+        for (double[] doubles : array) {
+            for (int j = 0; j < doubles.length; j++) {
+                System.out.println(doubles[j]);
+            }
+            System.out.println();
+        }
 
 	}
 
@@ -193,9 +193,9 @@ public class ArrayWriter {
 		}
 		// write the array
 		// formatter.format("****** Array's Length %d ******", array.length);
-		for ( int i = 0; i < array.length; i++ ) {
-			formatter.format( "%s\n", array[ i ] );
-		}
+        for (String s : array) {
+            formatter.format("%s\n", s);
+        }
 		formatter.flush( );
 		formatter.close( );
 	}
@@ -207,9 +207,9 @@ public class ArrayWriter {
 	 *            input array
 	 */
 	public static void printStringArrayToConole( String[] array ) {
-		for ( int i = 0; i < array.length; i++ ) {
-			System.out.println( array[ i ] );
-		}
+        for (String s : array) {
+            System.out.println(s);
+        }
 	}
 
 	public static void printStringArrayToConole( List< String > array ) {
@@ -236,9 +236,9 @@ public class ArrayWriter {
 		}
 		// write the array
 		// formatter.format("****** Array's Length %d ******", array.length);
-		for ( int i = 0; i < array.length; i++ ) {
-			formatter.format( "%f\n", array[ i ] );
-		}
+        for (float v : array) {
+            formatter.format("%f\n", v);
+        }
 		formatter.flush( );
 		formatter.close( );
 	}
@@ -250,8 +250,8 @@ public class ArrayWriter {
 	 *            input array
 	 */
 	public static void printFloatArrayToConole( float[] array ) {
-		for ( int i = 0; i < array.length; i++ ) {
-			System.out.println( array[ i ] );
-		}
+        for (float v : array) {
+            System.out.println(v);
+        }
 	}
 }

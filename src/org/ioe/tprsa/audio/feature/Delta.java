@@ -46,7 +46,7 @@ public class Delta {
 			mSqSum += Math.pow(i, 2);
 		}
 		// 2.calculate numerator
-		double delta[][] = new double[frameCount][noOfMfcc];
+		double[][] delta = new double[frameCount][noOfMfcc];
 		
 		
 		if(frameCount<M){
@@ -57,9 +57,7 @@ public class Delta {
 			
 			//i = frameCount 
 			for ( int i = 0; i < frameCount; i++ ) {
-				for ( int j = 0; j < noOfMfcc; j++ ) {
-					dataNew[i][j] =  data[ i ][ j ] ;
-				}
+                System.arraycopy(data[i], 0, dataNew[i], 0, noOfMfcc);
 				System.out.println( );
 			}
 			
@@ -122,13 +120,11 @@ public class Delta {
 		}
 		double[] delta = new double[frameCount];
 
-		for (int k = 0; k < M; k++) {
-			delta[k] = data[k]; // 0 padding
-		}
+        // 0 padding
+        if (M >= 0) System.arraycopy(data, 0, delta, 0, M);
 		// from frameCount-M to frameCount
-		for (int k = frameCount - M; k < frameCount; k++) {
-			delta[k] = data[k];
-		}
+        if (frameCount - frameCount - M >= 0)
+            System.arraycopy(data, frameCount - M, delta, frameCount - M, frameCount - frameCount - M);
 		for (int j = M; j < frameCount - M; j++) {
 			// travel from -M to +M
 			double sumDataMulM = 0;

@@ -14,16 +14,13 @@ package org.ioe.tprsa.audio.preProcessings;
  */
 public class EndPointDetection {
 
-	private float[] originalSignal; // input
-	private float[] silenceRemovedSignal;// output
-	private int samplingRate;
-	private int firstSamples;
-	private int samplePerFrame;
+	private final float[] originalSignal; // input
+	private final int firstSamples;
+	private final int samplePerFrame;
 
 	public EndPointDetection(float[] originalSignal, int samplingRate) {
 		this.originalSignal = originalSignal;
-		this.samplingRate = samplingRate;
-		samplePerFrame = this.samplingRate / 1000;
+		samplePerFrame = samplingRate / 1000;
 		firstSamples = samplePerFrame * 200;// according to formula
 	}
 
@@ -72,7 +69,7 @@ public class EndPointDetection {
 		int usefulFramesCount = 1;
 		int count_voiced = 0;
 		int count_unvoiced = 0;
-		int voicedFrame[] = new int[originalSignal.length / samplePerFrame];
+		int[] voicedFrame = new int[originalSignal.length / samplePerFrame];
 		int loopCount = originalSignal.length - (originalSignal.length % samplePerFrame);// skip
 																							// the
 																							// last
@@ -97,7 +94,8 @@ public class EndPointDetection {
 		}
 
 		// 5. silence removal
-		silenceRemovedSignal = new float[usefulFramesCount * samplePerFrame];
+		// output
+		float[] silenceRemovedSignal = new float[usefulFramesCount * samplePerFrame];
 		int k = 0;
 		for (int i = 0; i < frameCount; i++) {
 			if (voicedFrame[i] == 1) {

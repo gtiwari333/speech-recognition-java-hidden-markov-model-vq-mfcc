@@ -86,11 +86,11 @@ public class HiddenMarkov {
 	/**
 	 * discrete set of observation symbols example: sequence of colour of balls
 	 */
-	protected int		obSeq[][];
+	protected int[][] obSeq;
 	/**
 	 * current observation sequence
 	 */
-	protected int		currentSeq[];
+	protected int[] currentSeq;
 	/**
 	 * number of observation sequence
 	 */
@@ -98,35 +98,31 @@ public class HiddenMarkov {
 	/**
 	 * state transition probability example: probability from one state to another state
 	 */
-	protected double	transition[][];
+	protected double[][] transition;
 	/**
 	 * discrete output probability example: probability of a specific output from a state
 	 */
-	protected double	output[][];
+	protected double[][] output;
 	/**
 	 * initial state distribution example: which state is the starting state
 	 */
-	protected double	pi[];
+	protected double[] pi;
 	/**
 	 * forward variable alpha
 	 */
-	protected double	alpha[][];
+	protected double[][] alpha;
 	/**
 	 * backward variable beta
 	 */
-	protected double	beta[][];
+	protected double[][] beta;
 	/**
 	 * Scale Coefficient
 	 */
-	protected double	scaleFactor[];
-	/**
-	 * variable for viterbi algorithm
-	 */
-	private int			psi[][];
+	protected double[] scaleFactor;
 	/**
 	 * best state sequence
 	 */
-	public int			q[];
+	public int[] q;
 
 	/**
 	 * viterbi algorithm used to get best state sequence and probability<br>
@@ -137,10 +133,13 @@ public class HiddenMarkov {
 	 *            test sequence
 	 * @return probability
 	 */
-	public double viterbi( int testSeq[] ) {
+	public double viterbi(int[] testSeq) {
 		setObSeq( testSeq );
-		double phi[][] = new double[ len_obSeq ][ num_states ];
-		psi = new int[ len_obSeq ][ num_states ];
+		double[][] phi = new double[ len_obSeq ][ num_states ];
+		/**
+		 * variable for viterbi algorithm
+		 */
+		int[][] psi = new int[len_obSeq][num_states];
 		q = new int[ len_obSeq ];
 
 		for ( int i = 0; i < num_states; i++ ) {
@@ -240,7 +239,7 @@ public class HiddenMarkov {
 	 *            testing sequence
 	 * @return probability of observation sequence given the model
 	 */
-	public double getProbability( int testSeq[] ) {
+	public double getProbability(int[] testSeq) {
 		setObSeq( testSeq );
 		double temp = computeAlpha( );
 
@@ -255,9 +254,6 @@ public class HiddenMarkov {
 	 * @return probability
 	 */
 	protected double computeAlpha( ) {
-		/**
-		 * Pr(obSeq | model); Probability of the observation sequence given the hmm model
-		 */
 		double probability = 0;
 
 		// reset scaleFactor[]
@@ -265,9 +261,6 @@ public class HiddenMarkov {
 			scaleFactor[ t ] = 0;
 		}
 
-		/**
-		 * Initialization: Calculating all alpha variables at time = 0
-		 */
 		for ( int i = 0; i < num_states; i++ ) {
 			// System.out.println("current  "+i+" crr  "+currentSeq[0]);
 
@@ -275,20 +268,11 @@ public class HiddenMarkov {
 		}
 		rescaleAlpha( 0 );
 
-		/**
-		 * Induction:
-		 */
 		for ( int t = 0; t < len_obSeq - 1; t++ ) {
 			for ( int j = 0; j < num_states; j++ ) {
 
-				/**
-				 * Sum of all alpha[t][i] * transition[i][j]
-				 */
 				double sum = 0;
 
-				/**
-				 * Calculate sum of all alpha[t][i] * transition[i][j], 0 <= i < num_states
-				 */
 				for ( int i = 0; i < num_states; i++ ) {
 					sum += alpha[ t ][ i ] * transition[ i ][ j ];
 				}
@@ -298,9 +282,6 @@ public class HiddenMarkov {
 			rescaleAlpha( t + 1 );
 		}
 
-		/**
-		 * Termination: Calculate Pr(obSeq | model)
-		 */
 		for ( int i = 0; i < num_states; i++ ) {
 			probability += alpha[ len_obSeq - 1 ][ i ];
 		}
@@ -325,17 +306,11 @@ public class HiddenMarkov {
 	 * called by: HiddenMarkov
 	 */
 	protected void computeBeta( ) {
-		/**
-		 * Initialization: Set all beta variables to 1 at time = len_obSeq - 1
-		 */
 		for ( int i = 0; i < num_states; i++ ) {
 			beta[ len_obSeq - 1 ][ i ] = 1;
 		}
 		rescaleBeta( len_obSeq - 1 );
 
-		/**
-		 * Induction:
-		 */
 		for ( int t = len_obSeq - 2; t >= 0; t-- ) {
 			for ( int i = 0; i < num_states; i++ ) {
 				for ( int j = 0; j < num_states; j++ ) {
@@ -369,7 +344,7 @@ public class HiddenMarkov {
 	 * @param trainSeq
 	 *            training sequence
 	 */
-	public void setTrainSeq( int k, int trainSeq[] ) {
+	public void setTrainSeq(int k, int[] trainSeq) {
 		obSeq[ k ] = trainSeq;
 	}
 
@@ -381,13 +356,11 @@ public class HiddenMarkov {
 	 * @param trainSeq
 	 *            training sequences
 	 */
-	public void setTrainSeq( int trainSeq[][] ) {
+	public void setTrainSeq(int[][] trainSeq) {
 		num_obSeq = trainSeq.length;
 		obSeq = new int[ num_obSeq ][];// /ADDED
 		// System.out.println("num obSeq << setTrainSeq()    "+num_obSeq);
-		for ( int k = 0; k < num_obSeq; k++ ) {
-			obSeq[ k ] = trainSeq[ k ];
-		}
+		System.arraycopy(trainSeq, 0, obSeq, 0, num_obSeq);
 	}
 
 	/**
@@ -414,10 +387,10 @@ public class HiddenMarkov {
 	private void reestimate( ) {
 		// new probabilities that will be the optimized and replace the older
 		// version
-		double newTransition[][] = new double[ num_states ][ num_states ];
-		double newOutput[][] = new double[ num_states ][ num_symbols ];
-		double numerator[] = new double[ num_obSeq ];
-		double denominator[] = new double[ num_obSeq ];
+		double[][] newTransition = new double[ num_states ][ num_states ];
+		double[][] newOutput = new double[ num_states ][ num_symbols ];
+		double[] numerator = new double[ num_obSeq ];
+		double[] denominator = new double[ num_obSeq ];
 
 		// calculate new transition probability matrix
 		double sumP = 0;
@@ -493,7 +466,7 @@ public class HiddenMarkov {
 	 * @param observationSeq
 	 *            observation sequence
 	 */
-	public void setObSeq( int observationSeq[] ) {
+	public void setObSeq(int[] observationSeq) {
 		currentSeq = observationSeq;
 		len_obSeq = observationSeq.length;
 		// System.out.println("len_obSeq<<setObSeq()   "+len_obSeq);
@@ -542,9 +515,6 @@ public class HiddenMarkov {
 		output = new double[ num_states ][ num_symbols ];
 		pi = new double[ num_states ];
 
-		/**
-		 * in a left-to-right HMM model, the first state is always the initial state. e.g. probability = 1
-		 */
 		pi[ 0 ] = 1;
 		for ( int i = 1; i < num_states; i++ ) {
 			pi[ i ] = 0;
@@ -584,10 +554,8 @@ public class HiddenMarkov {
 	 * save HMM model to file<br>
 	 * calls: none<br>
 	 * called by: trainHMM
-	 * 
-	 * @param filepath
-	 *            file location
-	 */
+	 *
+     */
 	public void save( String modelName ) throws Exception {
 		DataBase db = new ObjectIODataBase( );
 		db.setType( "hmm" );

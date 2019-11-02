@@ -7,11 +7,11 @@
  */
 package org.ioe.tprsa.util;
 
-import javax.swing.JLabel;
+import javax.swing.*;
 
 public class ErrorManager {
 
-	private static ErrorManager	em	= new ErrorManager( );
+	private static final ErrorManager	em	= new ErrorManager( );
 	private static JLabel		mlbl;
 
 	private ErrorManager( ) {

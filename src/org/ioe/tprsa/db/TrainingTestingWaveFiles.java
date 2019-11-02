@@ -24,33 +24,8 @@ public class TrainingTestingWaveFiles {
 	protected File				wavPath;
 
 	/**
-	 * MAKE SURE THAT Files are/will be in this folder structure the folder
-	 * structure for training : 
-	 * 
-	 * (Selected)DBROOTFOLDER\
-	 * 
-	 * \speechTrainWav\\apple\\apple01.wav 
-	 * 
-	 * \speechTrainWav\\apple\\apple02.wav
-	 * 
-	 * \speechTestWav\\cat\\cat01.wav 
-	 * 
-	 * \speechTestWav\\cat\\cat01.wav
-	 * 
-	 * \speechTestWav\\cat\\cat01.wav 
-	 * 
-	 * \speakerTrainWav\\userA\\userA1.wav
-	 * 
-	 * \codeBook\\codeBook.cbk 
-	 * 
-	 * \models\\HMM\\apple.hmm \models\\HMM\\cat.hmm
-	 * 
-	 */
-
-	/**
 	 * constructor, sets the wavFile path according to the args supplied
 	 * 
-	 * @param hmmOrGmm
 	 * @param testOrTrain
 	 */
 	public TrainingTestingWaveFiles( String testOrTrain ) {
@@ -82,11 +57,11 @@ public class TrainingTestingWaveFiles {
 			waveFiles[ i ] = wordDir.listFiles( );
 		}
 		System.out.println( "++++++Folder's Content+++++" );
-		for ( int i = 0; i < waveFiles.length; i++ ) {
-			for ( int j = 0; j < waveFiles[ i ].length; j++ ) {
-				System.out.print( waveFiles[ i ][ j ].getName( ) + "\t\t" );
+		for (File[] waveFile : waveFiles) {
+			for (int j = 0; j < waveFile.length; j++) {
+				System.out.print(waveFile[j].getName() + "\t\t");
 			}
-			System.out.println( );
+			System.out.println();
 		}
 		return waveFiles;
 
