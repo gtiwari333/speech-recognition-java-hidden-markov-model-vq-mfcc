@@ -140,8 +140,9 @@ public class WaveData {
 		System.out.println( "WaveData.saveToFile() " + name );
 
 		File myFile = new File( name );
-		if ( !myFile.exists( ) )
-			myFile.mkdirs( );
+		File fileParent = myFile.getParentFile();
+		if ( !fileParent.exists( ) )
+			fileParent.mkdirs( );
 
 		if ( audioInputStream == null ) {
 			return;
