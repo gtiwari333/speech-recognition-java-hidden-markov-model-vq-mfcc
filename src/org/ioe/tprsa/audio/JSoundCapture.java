@@ -257,11 +257,15 @@ public class JSoundCapture extends JPanel implements ActionListener {
 	}
 
 	public void getFileNameAndSaveFile( ) throws Exception {
+		int i = 0;
 		while ( saveFileName == null ) {
 			saveFileName = JOptionPane.showInputDialog( null, "Enter WAV File Name", "Getting File Name" );
+			i = 1;
 		}
-		wd.saveToFile( saveFileName, AudioFileFormat.Type.WAVE, audioInputStream );
-
+		if(i==1)
+			wd.saveToFile( "wave" + File.separator + saveFileName, AudioFileFormat.Type.WAVE, audioInputStream );
+		else
+			wd.saveToFile( saveFileName, AudioFileFormat.Type.WAVE, audioInputStream );
 	}
 
 	// public void saveFileAutoMode() {
