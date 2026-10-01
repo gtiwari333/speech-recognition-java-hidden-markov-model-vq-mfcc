@@ -21,6 +21,8 @@ public class Energy {
      */
 	private final int samplePerFrame;
 
+	private static final double MIN_ENERGY = 1e-10;
+
 	/**
 	 * 
 	 * @param samplePerFrame
@@ -37,13 +39,13 @@ public class Energy {
 	public double[] calcEnergy(float[][] framedSignal) {
 		double[] energyValue = new double[framedSignal.length];
 		for (int i = 0; i < framedSignal.length; i++) {
-			float sum = 0;
+			double sum = 0;
 			for (int j = 0; j < samplePerFrame; j++) {
 				// sum the square
-				sum += Math.pow(framedSignal[i][j], 2);
+				sum += framedSignal[i][j] * framedSignal[i][j];
 			}
-			// find log
-			energyValue[i] = Math.log(sum);
+			// find log, floored so that a silent frame does not give -Infinity
+			energyValue[i] = Math.log(Math.max(sum, MIN_ENERGY));
 		}
 		return energyValue;
 	}

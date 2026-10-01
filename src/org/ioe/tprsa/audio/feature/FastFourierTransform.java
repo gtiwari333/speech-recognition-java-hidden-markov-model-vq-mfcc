@@ -76,16 +76,11 @@ public class FastFourierTransform {
 	 */
 	public void computeFFT(float[] signal) {
 		numPoints = signal.length;
-		// initialize real & imag array
-		real = new float[numPoints];
+		// copy the N point signal into the real part of the complex DFT's time
+		// domain (the FFT works in place, so never alias the caller's array)
+		real = signal.clone();
+		// all of the samples in the imaginary part are zero
 		imag = new float[numPoints];
-		// move the N point signal into the real part of the complex DFT's time
-		// domain
-		real = signal;
-		// set all of the samples in the imaginary part to zero
-		for (int i = 0; i < imag.length; i++) {
-			imag[i] = 0;
-		}
 		// perform FFT using the real & imag array
 		compute();
 	}

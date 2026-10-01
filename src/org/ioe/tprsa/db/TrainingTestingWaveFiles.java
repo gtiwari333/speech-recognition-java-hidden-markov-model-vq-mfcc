@@ -8,7 +8,9 @@
 package org.ioe.tprsa.db;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -39,7 +41,15 @@ public class TrainingTestingWaveFiles {
 
 	private void readFolder( ) {
 		//		System.out.println(getWavPath().getAbsolutePath());
-		folderNames = Arrays.asList( getWavPath( ).list( ) );// must return only folders
+		// only word folders, sorted so that word i always matches waveFiles[i]
+		File[] dirs = getWavPath( ).listFiles( f -> f.isDirectory( ) && !f.getName( ).startsWith( "." ) );
+		folderNames = new ArrayList<>( );
+		if ( dirs != null ) {
+			for ( File d : dirs ) {
+				folderNames.add( d.getName( ) );
+			}
+		}
+		Collections.sort( folderNames );
 	}
 
 	public List< String > readWordWavFolder( ) {
@@ -54,7 +64,8 @@ public class TrainingTestingWaveFiles {
 
 			System.out.println( folderNames.get( i ) );
 			File wordDir = new File( getWavPath( ) + File.separator + folderNames.get( i ) + File.separator );
-			waveFiles[ i ] = wordDir.listFiles( );
+			waveFiles[ i ] = wordDir.listFiles( ( dir, name ) -> name.toLowerCase( ).endsWith( ".wav" ) );
+			Arrays.sort( waveFiles[ i ] );
 		}
 		System.out.println( "++++++Folder's Content+++++" );
 		for (File[] waveFile : waveFiles) {

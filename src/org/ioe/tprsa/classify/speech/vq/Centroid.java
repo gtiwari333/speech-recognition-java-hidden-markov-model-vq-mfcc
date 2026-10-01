@@ -189,8 +189,8 @@ public class Centroid extends Points implements Serializable {
 		// divide sum of coordinates by total number points to get average
 		for (int k = 0; k < dimension; k++) {
 			setCo(k, sum_coordinates[k] / total_pts);
-			pts = new Vector(0);
 		}
+		pts = new Vector<>(0);
 
 		// reset number of points
 		total_pts = 0;

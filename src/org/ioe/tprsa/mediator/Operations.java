@@ -23,6 +23,7 @@ import org.ioe.tprsa.util.ArrayWriter;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * @author Ganesh Tiwari
@@ -35,6 +36,8 @@ public class Operations {
 	// int samplePerFrame = 256;//16ms for 8 khz
 	final int							samplePerFrame		= 512;							// 23.22ms
 	final int							FEATUREDIMENSION	= 39;
+	static final int					NUM_STATES			= 6;
+	static final int					CODEBOOK_SIZE		= 256;
 	List< String >				words;
 	String[]					users;
 	File[][]					wavFiles;
@@ -76,7 +79,7 @@ public class Operations {
 			pts[ j ] = new Points( allFeatures[ j ] );
 		}
 		System.out.println( "Generating Codebook........" );
-		Codebook cbk = new Codebook( pts );
+		Codebook cbk = new Codebook( pts, CODEBOOK_SIZE );
 		cbk.saveToFile( );
 		System.out.println( "Codebook Generation Completed" );
 		// hmmTrain();
@@ -107,8 +110,8 @@ public class Operations {
 				quantized[ j ] = cb.quantize( pts );
 				// ArrayWriter.printIntArrayToConole(quantized[j]);
 			}
-			mkv = new HiddenMarkov( 6, 256 );
-			// TODO: value, MAKE CONSTANTS
+			// fixed seed: retraining on the same recordings gives the same models
+			mkv = new HiddenMarkov( NUM_STATES, CODEBOOK_SIZE, new Random( currentWord.hashCode( ) ) );
 
 			// do training
 			System.out.println( "Training......." );

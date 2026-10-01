@@ -16,6 +16,13 @@ Automatically exported from code.google.com/p/speech-recognition-java-hidden-mar
 - org.ioe.tprsa.ui.HMM_VQ_Speech_Recognition : GUI that allows record of voice samples per word, train the samples, test with a recorded audio or saved .wav file.
 
 
+#### Build, test and run (Maven, JDK 17+)
+
+- `mvn test` : unit tests + an end-to-end recognition test over `TrainWav/` using the committed models
+- `mvn package && java -jar target/speech-recognition-hmm-vq-mfcc-1.0-SNAPSHOT.jar` : launch the GUI (run from the project root, model/wav paths are relative)
+- Retrain after changing the feature extraction: `Operations.generateCodebook()` then `Operations.hmmTrain()`
+  (also available from the GUI). Training is seeded, so the same recordings always give the same models.
+
 ##### Folder conventions :
 
 ##### Training audio files 

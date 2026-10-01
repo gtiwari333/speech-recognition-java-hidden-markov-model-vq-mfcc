@@ -33,18 +33,23 @@ public class Delta {
 		this.M = M;
 	}
 
+	/**
+	 * denominator of the regression formula: 2 * sum(m^2), m = 1..M
+	 */
+	private double denominator() {
+		double mSqSum = 0;
+		for (int m = 1; m <= M; m++) {
+			mSqSum += m * m;
+		}
+		return 2 * mSqSum;
+	}
+
 	public double[][] performDelta2D(double[][] data) {
 		int noOfMfcc = data[0].length;
 		int frameCount = data.length;
-		
-//		if(frameCount<M){
-//			frameCount= M;
-//		}
+
 		// 1. calculate sum of mSquare i.e., denominator
-		double mSqSum = 0;
-		for (int i = -M; i < M; i++) {
-			mSqSum += Math.pow(i, 2);
-		}
+		double mSqSum = denominator();
 		// 2.calculate numerator
 		double[][] delta = new double[frameCount][noOfMfcc];
 		
@@ -56,16 +61,9 @@ public class Delta {
 			
 			
 			//i = frameCount 
+			// remaining rows stay 0
 			for ( int i = 0; i < frameCount; i++ ) {
                 System.arraycopy(data[i], 0, dataNew[i], 0, noOfMfcc);
-				System.out.println( );
-			}
-			
-			for ( int i = frameCount; i < M; i++ ) {
-				for ( int j = 0; j < noOfMfcc; j++ ) {
-					dataNew[i][j] =  0;
-				}
-				System.out.println( );
 			}
 			
 			frameCount = M;
@@ -78,10 +76,6 @@ public class Delta {
 			// handle the boundary
 			// 0 padding results best result
 			// from 0 to M
-			
-			if(frameCount==1){
-				System.out.println( "look into" );
-			}
 			
 			for (int k = 0; k < M; k++) {
 				// delta[k][i] = 0; //0 padding
@@ -114,17 +108,14 @@ public class Delta {
 	public double[] performDelta1D(double[] data) {
 		int frameCount = data.length;
 
-		double mSqSum = 0;
-		for (int i = -M; i < M; i++) {
-			mSqSum += Math.pow(i, 2);
-		}
+		double mSqSum = denominator();
 		double[] delta = new double[frameCount];
 
-        // 0 padding
-        if (M >= 0) System.arraycopy(data, 0, delta, 0, M);
+		// boundaries: same handling as performDelta2D
+		int edge = Math.min(M, frameCount);
+		System.arraycopy(data, 0, delta, 0, edge);
 		// from frameCount-M to frameCount
-        if (frameCount - frameCount - M >= 0)
-            System.arraycopy(data, frameCount - M, delta, frameCount - M, frameCount - frameCount - M);
+		System.arraycopy(data, frameCount - edge, delta, frameCount - edge, edge);
 		for (int j = M; j < frameCount - M; j++) {
 			// travel from -M to +M
 			double sumDataMulM = 0;

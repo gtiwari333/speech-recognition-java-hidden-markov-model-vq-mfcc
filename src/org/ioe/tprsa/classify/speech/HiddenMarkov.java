@@ -48,6 +48,8 @@ import org.ioe.tprsa.db.DataBase;
 import org.ioe.tprsa.db.ObjectIODataBase;
 import org.ioe.tprsa.util.ArrayWriter;
 
+import java.util.Random;
+
 /**
  * last updated on June 15, 2002<br>
  * <b>description:</b> this class represents a left-to-right Hidden Markov Model and its essential methods for speech recognition. The collection of methods
@@ -83,6 +85,11 @@ public class HiddenMarkov {
 	 * number of states the model is allowed to jump
 	 */
 	protected final int	delta			= 2;
+	/**
+	 * Baum-Welch stops after this many iterations, or earlier once the log likelihood stops improving
+	 */
+	static final int	MAX_ITERATIONS			= 50;
+	static final double	CONVERGENCE_THRESHOLD	= 1e-5;
 	/**
 	 * discrete set of observation symbols example: sequence of colour of balls
 	 */
@@ -369,93 +376,86 @@ public class HiddenMarkov {
 	 * called by: trainHMM
 	 */
 	public void train( ) {
-		// re-estimate 25 times
-		// NOTE: should be changed to re-estimate until no more improvement
-		for ( int i = 0; i < 20; i++ ) {
-			reestimate( );
-			System.out.println( "reestimating....." );
+		double previous = Double.NEGATIVE_INFINITY;
+		for ( int i = 0; i < MAX_ITERATIONS; i++ ) {
+			double logLikelihood = reestimate( );
+			if ( Math.abs( logLikelihood - previous ) < CONVERGENCE_THRESHOLD * Math.abs( logLikelihood ) ) {
+				break;
+			}
+			previous = logLikelihood;
 		}
-		//
-		// oldm=
 	}
 
 	/**
 	 * Baum-Welch Algorithm - Re-estimate (iterative udpate and improvement) of HMM parameters<br>
 	 * calls: none<br>
 	 * called by: trainHMM
+	 * <p>
+	 * with the scaled forward/backward variables used here (Rabiner, 1989):<br>
+	 * xi_t(i,j) = alpha^_t(i) a_ij b_j(O_t+1) beta^_t+1(j)<br>
+	 * gamma_t(i) = alpha^_t(i) beta^_t(i) / c_t<br>
+	 * the 1/P(O) weighting of each sequence is already folded into the scaling.
+	 *
+	 * @return total log likelihood of the training sequences under the model before this update
 	 */
-	private void reestimate( ) {
-		// new probabilities that will be the optimized and replace the older
-		// version
-		double[][] newTransition = new double[ num_states ][ num_states ];
-		double[][] newOutput = new double[ num_states ][ num_symbols ];
-		double[] numerator = new double[ num_obSeq ];
-		double[] denominator = new double[ num_obSeq ];
+	private double reestimate( ) {
+		double[][] transNum = new double[ num_states ][ num_states ];
+		double[] transDen = new double[ num_states ];
+		double[][] outNum = new double[ num_states ][ num_symbols ];
+		double[] outDen = new double[ num_states ];
+		double logLikelihood = 0;
 
-		// calculate new transition probability matrix
-		double sumP = 0;
+		for ( int k = 0; k < num_obSeq; k++ ) {
+			setObSeq( obSeq[ k ] );
+			logLikelihood += computeAlpha( );
+			computeBeta( );
 
-		for ( int i = 0; i < num_states; i++ ) {
-			for ( int j = 0; j < num_states; j++ ) {
-
-				if ( j < i || j > i + delta ) {
-					newTransition[ i ][ j ] = 0;
-				} else {
-					for ( int k = 0; k < num_obSeq; k++ ) {
-						numerator[ k ] = denominator[ k ] = 0;
-						setObSeq( obSeq[ k ] );
-
-						sumP += computeAlpha( );
-						computeBeta( );
-						for ( int t = 0; t < len_obSeq - 1; t++ ) {
-							numerator[ k ] += alpha[ t ][ i ] * transition[ i ][ j ] * output[ j ][ currentSeq[ t + 1 ] ] * beta[ t + 1 ][ j ];
-							denominator[ k ] += alpha[ t ][ i ] * beta[ t ][ i ];
+			for ( int t = 0; t < len_obSeq; t++ ) {
+				for ( int i = 0; i < num_states; i++ ) {
+					double gamma = alpha[ t ][ i ] * beta[ t ][ i ] / scaleFactor[ t ];
+					outNum[ i ][ currentSeq[ t ] ] += gamma;
+					outDen[ i ] += gamma;
+					if ( t < len_obSeq - 1 ) {
+						transDen[ i ] += gamma;
+						for ( int j = i; j <= Math.min( i + delta, num_states - 1 ); j++ ) {
+							transNum[ i ][ j ] += alpha[ t ][ i ] * transition[ i ][ j ] * output[ j ][ currentSeq[ t + 1 ] ] * beta[ t + 1 ][ j ];
 						}
 					}
-					double denom = 0;
-					for ( int k = 0; k < num_obSeq; k++ ) {
-						newTransition[ i ][ j ] += ( 1 / sumP ) * numerator[ k ];
-						denom += ( 1 / sumP ) * denominator[ k ];
-					}
-					newTransition[ i ][ j ] /= denom;
-					newTransition[ i ][ j ] += MIN_PROBABILITY;
 				}
 			}
 		}
 
-		// calculate new output probability matrix
-		sumP = 0;
 		for ( int i = 0; i < num_states; i++ ) {
-			for ( int j = 0; j < num_symbols; j++ ) {
-				for ( int k = 0; k < num_obSeq; k++ ) {
-					numerator[ k ] = denominator[ k ] = 0;
-					setObSeq( obSeq[ k ] );
-
-					sumP += computeAlpha( );
-					computeBeta( );
-
-					for ( int t = 0; t < len_obSeq - 1; t++ ) {
-						if ( currentSeq[ t ] == j ) {
-							numerator[ k ] += alpha[ t ][ i ] * beta[ t ][ i ];
-						}
-						denominator[ k ] += alpha[ t ][ i ] * beta[ t ][ i ];
-					}
+			// a state never reached keeps its previous parameters
+			if ( transDen[ i ] > 0 ) {
+				for ( int j = 0; j < num_states; j++ ) {
+					transition[ i ][ j ] = isAllowedTransition( i, j ) ? transNum[ i ][ j ] / transDen[ i ] + MIN_PROBABILITY : 0;
 				}
-
-				double denom = 0;
-				for ( int k = 0; k < num_obSeq; k++ ) {
-					newOutput[ i ][ j ] += ( 1 / sumP ) * numerator[ k ];
-					denom += ( 1 / sumP ) * denominator[ k ];
+				normalize( transition[ i ] );
+			}
+			if ( outDen[ i ] > 0 ) {
+				for ( int j = 0; j < num_symbols; j++ ) {
+					output[ i ][ j ] = outNum[ i ][ j ] / outDen[ i ] + MIN_PROBABILITY;
 				}
-
-				newOutput[ i ][ j ] /= denom;
-				newOutput[ i ][ j ] += MIN_PROBABILITY;
+				normalize( output[ i ] );
 			}
 		}
+		return logLikelihood;
+	}
 
-		// replace old matrices after re-estimate
-		transition = newTransition;
-		output = newOutput;
+	private boolean isAllowedTransition( int i, int j ) {
+		// left-to-right model that can skip at most delta states
+		return j >= i && j <= i + delta;
+	}
+
+	private static void normalize( double[] row ) {
+		double sum = 0;
+		for ( double v : row ) {
+			sum += v;
+		}
+		for ( int j = 0; j < row.length; j++ ) {
+			row[ j ] /= sum;
+		}
 	}
 
 	/**
@@ -509,6 +509,13 @@ public class HiddenMarkov {
 	 *            number of symbols per state
 	 */
 	public HiddenMarkov( int num_states, int num_symbols ) {
+		this( num_states, num_symbols, new Random( ) );
+	}
+
+	/**
+	 * same as {@link #HiddenMarkov(int, int)}, but with a caller supplied random source so training is reproducible
+	 */
+	public HiddenMarkov( int num_states, int num_symbols, Random random ) {
 		this.num_states = num_states;
 		this.num_symbols = num_symbols;
 		transition = new double[ num_states ][ num_states ];
@@ -521,32 +528,26 @@ public class HiddenMarkov {
 		}
 
 		// generate random probability for all the other probability matrices
-		randomProb( );
+		randomProb( random );
 	}
 
 	/**
 	 * generates random probabilities for transition, output probabilities<br>
+	 * each row is normalised so the initial model is a valid HMM<br>
 	 * calls: none<br>
 	 * called by: HiddenMarkov corrected by GT
 	 */
-	private void randomProb( ) {
+	private void randomProb( Random random ) {
 		for ( int i = 0; i < num_states; i++ ) {
 			for ( int j = 0; j < num_states; j++ ) {
-				if ( j < i || j > i + delta ) {
-					transition[ i ][ j ] = 0;// R-L prob=0 for L-R HMM, and with
-												// Delta
-				} else {
-					double randNum = Math.random( );
-					transition[ i ][ j ] = randNum;
-					// System.out.println("transition init: "+transition[i][j]);
-				}
+				// R-L prob=0 for L-R HMM, and with Delta
+				transition[ i ][ j ] = isAllowedTransition( i, j ) ? random.nextDouble( ) + MIN_PROBABILITY : 0;
 			}
+			normalize( transition[ i ] );
 			for ( int j = 0; j < num_symbols; j++ ) {
-				double randNum = Math.random( );
-				output[ i ][ j ] = randNum;
-				// System.out.println("outputInit: "+output[i][j]);
+				output[ i ][ j ] = random.nextDouble( ) + MIN_PROBABILITY;
 			}
-
+			normalize( output[ i ] );
 		}
 	}
 

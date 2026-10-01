@@ -33,7 +33,7 @@ public class PreProcess {
 	 *            how many samples in one frame,=660 << frameDuration, typically 30; samplingFreq, typically 22Khz
 	 */
 	public PreProcess( float[] originalSignal, int samplePerFrame, int samplingRate ) {
-		this.originalSignal = originalSignal;
+		this.originalSignal = originalSignal.clone( ); // normalised in place, keep the caller's array intact
 		this.samplePerFrame = samplePerFrame;
 		this.samplingRate = samplingRate;
 
@@ -46,13 +46,13 @@ public class PreProcess {
 	}
 
 	private void normalizePCM( ) {
-		float max = originalSignal[ 0 ];
-		for ( int i = 1; i < originalSignal.length; i++ ) {
-			if ( max < Math.abs( originalSignal[ i ] ) ) {
-				max = Math.abs( originalSignal[ i ] );
-			}
+		float max = 0;
+		for ( float sample : originalSignal ) {
+			max = Math.max( max, Math.abs( sample ) );
 		}
-		// System.out.println("max PCM =  " + max);
+		if ( max == 0 ) {
+			return; // all silent
+		}
 		for ( int i = 0; i < originalSignal.length; i++ ) {
 			originalSignal[ i ] = originalSignal[ i ] / max;
 		}
@@ -64,13 +64,13 @@ public class PreProcess {
 	private void doFraming( ) {
 		// calculate no of frames, for framing
 
-		noOfFrames = 2 * afterEndPtDetection.length / samplePerFrame - 1;
-		System.out.println( "noOfFrames       " + noOfFrames + "  samplePerFrame     " + samplePerFrame + "  EPD length   " + afterEndPtDetection.length );
+		// 50% overlapping frames; a signal shorter than one frame becomes a single zero padded frame
+		noOfFrames = Math.max( 1, 2 * afterEndPtDetection.length / samplePerFrame - 1 );
 		framedSignal = new float[ noOfFrames ][ samplePerFrame ];
 		for ( int i = 0; i < noOfFrames; i++ ) {
 			int startIndex = ( i * samplePerFrame / 2 );
-			if (samplePerFrame >= 0)
-				System.arraycopy(afterEndPtDetection, startIndex + 0, framedSignal[i], 0, samplePerFrame);
+			int length = Math.min( samplePerFrame, afterEndPtDetection.length - startIndex );
+			System.arraycopy( afterEndPtDetection, startIndex, framedSignal[ i ], 0, length );
 		}
 	}
 

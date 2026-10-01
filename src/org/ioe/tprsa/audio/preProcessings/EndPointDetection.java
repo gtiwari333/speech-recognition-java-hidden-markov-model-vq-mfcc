@@ -21,7 +21,9 @@ public class EndPointDetection {
 	public EndPointDetection(float[] originalSignal, int samplingRate) {
 		this.originalSignal = originalSignal;
 		samplePerFrame = samplingRate / 1000;
-		firstSamples = samplePerFrame * 200;// according to formula
+		// the first 200 ms are taken as background noise (according to formula),
+		// or the whole signal when it is shorter than that
+		firstSamples = Math.min( samplePerFrame * 200, originalSignal.length );
 	}
 
 	public float[] doEndPointDetection() {
@@ -29,7 +31,7 @@ public class EndPointDetection {
 															// each
 		// sample whether it is
 		// voiced or unvoiced
-		float sum = 0;
+		double sum = 0;
 		double sd = 0.0;
 		double m = 0.0;
 
@@ -46,6 +48,10 @@ public class EndPointDetection {
 			sum += Math.pow((originalSignal[i] - m), 2);
 		}
 		sd = Math.sqrt(sum / firstSamples);
+		if (sd == 0 || Double.isNaN(sd)) {
+			// constant (e.g. digitally silent) lead-in: nothing to compare against
+			return originalSignal.clone();
+		}
 		// System.err.println("summm sum :" + sum);
 		// System.err.println("mew :" + m);
 		// System.err.println("sigma :" + sd);
@@ -66,7 +72,7 @@ public class EndPointDetection {
 		// 4. calculation of voiced and unvoiced signals
 		// mark each frame to be voiced or unvoiced frame
 		int frameCount = 0;
-		int usefulFramesCount = 1;
+		int usefulFramesCount = 0;
 		int count_voiced = 0;
 		int count_unvoiced = 0;
 		int[] voicedFrame = new int[originalSignal.length / samplePerFrame];
@@ -91,6 +97,11 @@ public class EndPointDetection {
 			else {
 				voicedFrame[frameCount++] = 0;
 			}
+		}
+
+		if (usefulFramesCount == 0) {
+			// no frame judged voiced: keep the signal rather than return nothing
+			return originalSignal.clone();
 		}
 
 		// 5. silence removal

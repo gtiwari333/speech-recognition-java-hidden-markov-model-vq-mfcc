@@ -13,6 +13,7 @@ import org.ioe.tprsa.classify.speech.HMMModel;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -115,10 +116,10 @@ public class ObjectIODataBase implements DataBase {
 	}
 
 	private List< String > readRegisteredWithExtension( ) {
-		File modelPath = new File( CURRENTFOLDER );
-
-		modelFiles = Arrays.asList( modelPath.list( ) );// must return only folders
-
+		// only "<word>.<type>" files, e.g. skip .DS_Store or README
+		String[] files = new File( CURRENTFOLDER ).list( ( dir, name ) -> !name.startsWith( "." ) && name.toLowerCase( ).endsWith( "." + type.toLowerCase( ) ) );
+		modelFiles = files == null ? new ArrayList<>( ) : new ArrayList<>( Arrays.asList( files ) );
+		Collections.sort( modelFiles );
 		return modelFiles;
 	}
 

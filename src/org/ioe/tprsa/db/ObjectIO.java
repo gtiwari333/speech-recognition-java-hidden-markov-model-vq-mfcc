@@ -49,10 +49,10 @@ public class ObjectIO< T > {
 		
 
 		// open file
-        ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream(file));
-		// save model
-		output.writeObject( model );
-		output.close( );
+		try ( ObjectOutputStream output = new ObjectOutputStream( new FileOutputStream( file ) ) ) {
+			// save model
+			output.writeObject( model );
+		}
 	}
 
 	/**
@@ -63,10 +63,10 @@ public class ObjectIO< T > {
 	 */
 	public T readModel( String filePath ) throws Exception {
 		// open file
-        ObjectInputStream input = new ObjectInputStream(new FileInputStream(filePath));
-		// read
-		model = ( T ) input.readObject( );
-		input.close( );
+		try ( ObjectInputStream input = new ObjectInputStream( new FileInputStream( filePath ) ) ) {
+			// read
+			model = ( T ) input.readObject( );
+		}
 		return model;
 	}
 }

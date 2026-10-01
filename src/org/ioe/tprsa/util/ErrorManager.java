@@ -22,9 +22,7 @@ public class ErrorManager {
 	}
 
 	public static void setMessageLbl( JLabel ilbl ) {
-		if ( mlbl != null ) {
-			mlbl = ilbl;
-		}
+		mlbl = ilbl;
 	}
 
 	public static void reportStatus( String msg, MessageType mt ) {

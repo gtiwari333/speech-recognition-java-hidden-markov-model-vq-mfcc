@@ -33,9 +33,8 @@ public class MFCC {
 	}
 
 	public double[] doMFCC(float[] framedSignal) {
-		// Magnitude Spectrum
-		double[] bin = magnitudeSpectrum(framedSignal);
-		framedSignal = preEmphasis(framedSignal);
+		// emphasize high frequencies, then take the Magnitude Spectrum
+		double[] bin = magnitudeSpectrum(preEmphasis(framedSignal));
 		/*
 		 * cbin=frequencies of the channels in terms of FFT bin indices (cbin[i]
 		 * for the i -th channel)
@@ -82,10 +81,11 @@ public class MFCC {
 	 */
 	private float[] preEmphasis(float[] inputSignal) {
 		// System.err.println(" inside pre Emphasis");
+		final double preEmphasisAlpha = 0.95;
 		float[] outputSignal = new float[inputSignal.length];
+		outputSignal[0] = inputSignal[0];
 		// apply pre-emphasis to each sample
 		for (int n = 1; n < inputSignal.length; n++) {
-			double preEmphasisAlpha = 0.95;
 			outputSignal[n] = (float) (inputSignal[n] - preEmphasisAlpha * inputSignal[n - 1]);
 		}
 		return outputSignal;
@@ -117,12 +117,12 @@ public class MFCC {
 			double num1 = 0.0, num2 = 0.0;
 			for (int i = cbin[k - 1]; i <= cbin[k]; i++) {
 				// System.out.println("Inside filter loop");
-				num1 += ((i - cbin[k - 1] + 1) / (cbin[k] - cbin[k - 1] + 1)) * bin[i];
+				num1 += ((i - cbin[k - 1] + 1) / (double) (cbin[k] - cbin[k - 1] + 1)) * bin[i];
 			}
 
 			for (int i = cbin[k] + 1; i <= cbin[k + 1]; i++) {
 				// System.out.println("Inside filter loop 222222");
-				num2 += (1 - ((i - cbin[k]) / (cbin[k + 1] - cbin[k] + 1))) * bin[i];
+				num2 += (1 - ((i - cbin[k]) / (double) (cbin[k + 1] - cbin[k] + 1))) * bin[i];
 			}
 
 			temp[k] = num1 + num2;

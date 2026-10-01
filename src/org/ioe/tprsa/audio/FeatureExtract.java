@@ -100,7 +100,6 @@ public class FeatureExtract {
 		}
 		fv.setMfccFeature( mfccFeature );
 		fv.setFeatureVector( featureVector );
-		System.gc( );
 	}
 
 	/**
@@ -120,10 +119,8 @@ public class FeatureExtract {
 	private void doCepstralMeanNormalization( ) {
 		double sum;
 		double mean;
-		double[][] mCeps = new double[ noOfFrames ][ numCepstra - 1 ];// same size
-																		// as mfcc
-																		// 1.loop through each mfcc coeff
-		for ( int i = 0; i < numCepstra - 1; i++ ) {
+		// 1.loop through each mfcc coeff
+		for ( int i = 0; i < numCepstra; i++ ) {
 			// calculate mean
 			sum = 0.0;
 			for ( int j = 0; j < noOfFrames; j++ ) {
@@ -132,7 +129,7 @@ public class FeatureExtract {
 			mean = sum / noOfFrames;
 			// subtract
 			for ( int j = 0; j < noOfFrames; j++ ) {
-				mCeps[ j ][ i ] = mfccFeature[ j ][ i ] - mean;
+				mfccFeature[ j ][ i ] -= mean;
 			}
 		}
 	}

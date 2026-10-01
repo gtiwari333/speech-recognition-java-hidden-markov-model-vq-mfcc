@@ -13,7 +13,7 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
+import java.nio.file.Files;
 import java.io.FileOutputStream;
 
 /**
@@ -48,12 +48,7 @@ public class WaveData {
 	}
 
 	public float[] extractAmplitudeFromFile( File wavFile ) throws Exception {
-		// create file input stream
-		FileInputStream fis = new FileInputStream( wavFile );
-		// create bytearray from file
-		byte[] arrFile = new byte[(int) wavFile.length()];
-		fis.read(arrFile);
-		return extractAmplitudeFromFileByteArray(arrFile);
+		return extractAmplitudeFromFileByteArray( Files.readAllBytes( wavFile.toPath( ) ) );
 	}
 
 	public float[] extractAmplitudeFromFileByteArray( byte[] arrFile ) throws Exception {
@@ -69,10 +64,9 @@ public class WaveData {
 	 * @throws Exception
 	 */
 	public float[] extractAmplitudeFromFileByteArrayInputStream( ByteArrayInputStream bis ) throws Exception {
-		AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(bis);
-		float milliseconds = ( long ) ( ( audioInputStream.getFrameLength( ) * 1000 ) / audioInputStream.getFormat( ).getFrameRate( ) );
-		durationSec = milliseconds / 1000.0;
-		return extractFloatDataFromAudioInputStream(audioInputStream);
+		try ( AudioInputStream audioInputStream = AudioSystem.getAudioInputStream( bis ) ) {
+			return extractFloatDataFromAudioInputStream( audioInputStream );
+		}
 	}
 
 	public float[] extractFloatDataFromAudioInputStream( AudioInputStream audioInputStream ) throws Exception {
@@ -82,7 +76,15 @@ public class WaveData {
 		float milliseconds = ( long ) ( ( audioInputStream.getFrameLength( ) * 1000 ) / audioInputStream.getFormat( ).getFrameRate( ) );
 		durationSec = milliseconds / 1000.0;
 		// System.out.println("The current signal has duration "+durationSec+" Sec");
-		audioInputStream.read( audioBytes );
+		// a single read() may return fewer bytes than requested
+		int offset = 0;
+		while ( offset < audioBytes.length ) {
+			int n = audioInputStream.read( audioBytes, offset, audioBytes.length - offset );
+			if ( n < 0 ) {
+				break;
+			}
+			offset += n;
+		}
 		return extractFloatDataFromAmplitudeByteArray( format, audioBytes );
 	}
 
@@ -118,7 +120,7 @@ public class WaveData {
 				}
 			} else {
 				for ( int i = 0; i < audioBytes.length; i++ ) {
-					audioData[ i ] = audioBytes[ i ] - 128;
+					audioData[ i ] = ( audioBytes[ i ] & 0xFF ) - 128;
 				}
 			}
 		} // end of if..else
@@ -165,9 +167,9 @@ public class WaveData {
 	 *            the name of file to save the received byteArray of File
 	 */
 	public void saveFileByteArray( String fileName, byte[] arrFile ) throws Exception {
-		FileOutputStream fos = new FileOutputStream(fileName);
-		fos.write( arrFile );
-		fos.close( );
+		try ( FileOutputStream fos = new FileOutputStream( fileName ) ) {
+			fos.write( arrFile );
+		}
 		System.out.println( "WAV Audio data saved to " + fileName );
 	}
 }
