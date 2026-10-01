@@ -14,8 +14,11 @@ Automatically exported from code.google.com/p/speech-recognition-java-hidden-mar
 #### Main classes to look into are :
 
 - `org.ioe.tprsa.mediator.Operations` : demonstrates codebook generation, HMM training and recognition
-- `org.ioe.tprsa.ui.HMM_VQ_Speech_Recognition` : GUI to record voice samples per word, train, and test with
-  a just recorded sample or a saved .wav file
+- `org.ioe.tprsa.ui.HMM_VQ_Speech_Recognition` : GUI to record voice samples per word, train, and test with a just recorded sample or a saved .wav file.
+  The right half of the window shows every step of the algorithm for the most recent job: *Recognition steps* (waveform and end point
+  detection, framing and windowing, spectrum and mel filter bank, MFCC, deltas and energy, vector quantization, the score of every word
+  model and the best state path) and *Training steps* (LBG codebook, training sequences, Baum-Welch convergence, learned matrices,
+  summary). Charts show exact values on hover, zoom by dragging and can be saved as PNG (right click).
 
 ## Algorithm
 

@@ -12,6 +12,10 @@ import org.ioe.tprsa.db.DataBase;
 import org.ioe.tprsa.db.ObjectIODataBase;
 import org.ioe.tprsa.db.TrainingTestingWaveFiles;
 import org.ioe.tprsa.mediator.Operations;
+import org.ioe.tprsa.trace.RecognitionTrace;
+import org.ioe.tprsa.trace.TrainingSession;
+import org.ioe.tprsa.ui.viz.RecognitionInspector;
+import org.ioe.tprsa.ui.viz.TrainingInspector;
 import org.ioe.tprsa.util.ErrorManager;
 import org.ioe.tprsa.util.Utils;
 
@@ -42,6 +46,13 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 	private JButton				getWordButton1			= null;
 
 	private final Operations			opr						= new Operations( );
+	private final RecognitionInspector	recognitionInspector	= new RecognitionInspector( );
+	private final TrainingInspector		trainingInspector		= new TrainingInspector( );
+	private final JTabbedPane			inspectorTabs			= new JTabbedPane( );
+	private final JLabel				jobStatus				= new JLabel( "Ready" );
+	private final JProgressBar			jobProgress				= new JProgressBar( );
+	private final JobRunner				jobs					= new JobRunner( jobStatus, jobProgress );
+	private TrainingSession				trainingSession			= TrainingSession.EMPTY;
 	private JLabel				aboutLBL;
 	private JLabel				statusLBLRecognize;
 	private JTextField			addWordToCombo			= null;
@@ -68,9 +79,66 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 	 * @return void
 	 */
 	private void initialize( ) {
-		this.setSize( 485, 335 );
-		this.setContentPane( getJContentPane( ) );
+		this.setSize( 1200, 750 );
+		this.setContentPane( getMainPane( ) );
 		this.setTitle( "HMM/VQ Speech Recognition - by GT" );
+		jobs.register( getBtnVerify( ), getGetWordButton( ), getGetWordButton1( ), getGenerateCodeBookBtn( ), getBtnNewButton_2( ) );
+	}
+
+	/**
+	 * the original controls on the left, the step inspectors on the right, a status line at the bottom
+	 */
+	private JPanel getMainPane( ) {
+		JPanel left = getJContentPane( );
+		left.setPreferredSize( new Dimension( 470, 300 ) );
+		JPanel leftHolder = new JPanel( new BorderLayout( ) );
+		leftHolder.add( left, BorderLayout.NORTH );
+		inspectorTabs.addTab( "Recognition steps", recognitionInspector );
+		inspectorTabs.addTab( "Training steps", trainingInspector );
+		JPanel statusBar = new JPanel( new BorderLayout( 8, 0 ) );
+		statusBar.setBorder( BorderFactory.createEmptyBorder( 2, 8, 2, 8 ) );
+		statusBar.add( jobStatus, BorderLayout.CENTER );
+		statusBar.add( jobProgress, BorderLayout.EAST );
+		JPanel main = new JPanel( new BorderLayout( ) );
+		main.add( new JSplitPane( JSplitPane.HORIZONTAL_SPLIT, leftHolder, inspectorTabs ), BorderLayout.CENTER );
+		main.add( statusBar, BorderLayout.SOUTH );
+		return main;
+	}
+
+	private void showRecognition( RecognitionTrace trace ) {
+		recognitionInspector.show( trace );
+		inspectorTabs.setSelectedComponent( recognitionInspector );
+	}
+
+	private void showTraining( ) {
+		trainingInspector.show( trainingSession );
+		inspectorTabs.setSelectedComponent( trainingInspector );
+	}
+
+	private void showError( Throwable t ) {
+		if ( !( t instanceof IllegalStateException || t instanceof IllegalArgumentException ) ) {
+			t.printStackTrace( );
+		}
+		JOptionPane.showMessageDialog( this, JobRunner.message( t ), "Error", JOptionPane.ERROR_MESSAGE );
+	}
+
+	/** the captured audio, or null after showing an error */
+	private float[] recordedAudio( ) {
+		try {
+			return soundCapture.getAudioData( );
+		} catch ( Exception e ) {
+			showError( e );
+			return null;
+		}
+	}
+
+	private void reloadRegisteredWords( ) {
+		getWordsComboBoxVerify( ).removeAllItems( );
+		DataBase db = new ObjectIODataBase( );
+		db.setType( "hmm" );
+		for ( String word : db.readRegistered( ) ) {
+			getWordsComboBoxVerify( ).addItem( word );
+		}
 	}
 
 	/**
@@ -150,17 +218,13 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 			btnVerify = new JButton( "Verify" );
 			btnVerify.addActionListener(e -> {
 				if ( soundCapture.isSoundDataAvailable( ) && getWordsComboBoxVerify( ).getItemCount( ) > 0 ) {
-
-					try {
-
-						String recWord = opr.hmmGetWordFromAmplitureArray( soundCapture.getAudioData( ) );
-						if ( recWord.equalsIgnoreCase( getWordsComboBoxVerify( ).getSelectedItem( ).toString( ) ) ) {
-							getStatusLblRecognize( ).setText( "Verified" );
-						} else {
-							getStatusLblRecognize( ).setText( "Not Verified" );
-						}
-					} catch ( Exception e2 ) {
-						e2.printStackTrace( );
+					String expected = getWordsComboBoxVerify( ).getSelectedItem( ).toString( );
+					float[] audio = recordedAudio( );
+					if ( audio != null ) {
+						jobs.run( "Verifying \"" + expected + "\"", progress -> opr.recognizeWithTrace( audio, expected ), trace -> {
+							getStatusLblRecognize( ).setText( trace.verified( ) ? "Verified" : "<html>Not Verified<br>(heard " + trace.recognizedWord( ) + ")</html>" );
+							showRecognition( trace );
+						}, this::showError );
 					}
 				}
 			});
@@ -213,14 +277,13 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 			getWordButton = new JButton( "Recognize With Just Recorded" );
 			getWordButton.addActionListener(arg0 -> {
 				if ( soundCapture.isSoundDataAvailable( ) && getWordsComboBoxVerify( ).getItemCount( ) > 0 ) {
-
-					try {
-
-						getStatusLblRecognize( ).setText( opr.hmmGetWordFromAmplitureArray( soundCapture.getAudioData( ) ) );
-					} catch ( Exception e ) {
-						e.printStackTrace( );
+					float[] audio = recordedAudio( );
+					if ( audio != null ) {
+						jobs.run( "Recognizing the recording", progress -> opr.recognizeWithTrace( audio, null ), trace -> {
+							getStatusLblRecognize( ).setText( trace.recognizedWord( ) );
+							showRecognition( trace );
+						}, this::showError );
 					}
-
 				}
 			});
 			getWordButton.setBounds( new Rectangle( 13, 8, 202, 24 ) );
@@ -276,17 +339,12 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 		if ( getWordButton1 == null ) {
 			getWordButton1 = new JButton( "Recognize a Saved WAV File" );
 			getWordButton1.addActionListener(e -> {
-				System.out.println( "getting word file totest" );
 				File f = getTestFile( );
 				if ( f != null ) {
-
-					try {
-
-						getStatusLblRecognize( ).setText( opr.hmmGetWordFromFile( f ) );
-					} catch ( Exception e2 ) {
-						e2.printStackTrace( );
-					}
-
+					jobs.run( "Recognizing " + f.getName( ), progress -> opr.recognizeWithTrace( f, null ), trace -> {
+						getStatusLblRecognize( ).setText( trace.recognizedWord( ) );
+						showRecognition( trace );
+					}, this::showError );
 				}
 			});
 			getWordButton1.setBounds( new Rectangle( 225, 8, 189, 24 ) );
@@ -426,7 +484,6 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 			HMM_VQ_Speech_Recognition test = new HMM_VQ_Speech_Recognition( );
 			test.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
 
-			test.setResizable( false );
 			test.setVisible( true );
 		});
 	}
@@ -450,14 +507,10 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 	private JButton getGenerateCodeBookBtn( ) {
 		if ( generateCodeBookBtn == null ) {
 			generateCodeBookBtn = new JButton( "Generate CodeBook" );
-			generateCodeBookBtn.addActionListener(e -> {
-				try {
-
-					opr.generateCodebook( );
-				} catch ( Exception e2 ) {
-					e2.printStackTrace( );
-				}
-			});
+			generateCodeBookBtn.addActionListener(e -> jobs.run( "Generating the codebook", opr::generateCodebookWithTrace, codebook -> {
+				trainingSession = trainingSession.withCodebook( codebook );
+				showTraining( );
+			}, this::showError ));
 			generateCodeBookBtn.setBounds( 10, 32, 167, 23 );
 		}
 		return generateCodeBookBtn;
@@ -466,14 +519,11 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 	private JButton getBtnNewButton_2( ) {
 		if ( btnNewButton_2 == null ) {
 			btnNewButton_2 = new JButton( "Train HMM" );
-			btnNewButton_2.addActionListener(e -> {
-				try {
-					opr.hmmTrain( );
-				} catch ( Exception e2 ) {
-					e2.printStackTrace( );
-
-				}
-			});
+			btnNewButton_2.addActionListener(e -> jobs.run( "Training the word HMMs", opr::hmmTrainWithTrace, words -> {
+				trainingSession = trainingSession.withWords( words );
+				showTraining( );
+				reloadRegisteredWords( );
+			}, this::showError ));
 			btnNewButton_2.setBounds( 10, 74, 167, 23 );
 		}
 		return btnNewButton_2;
