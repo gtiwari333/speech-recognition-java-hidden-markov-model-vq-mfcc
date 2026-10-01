@@ -5,6 +5,8 @@ package org.ioe.tprsa.trace;
  *
  * @param normalisedSignal
  *            the recording divided by its peak amplitude
+ * @param noiseFrames
+ *            frames of {@code epdFrameSize} samples the noise statistics were computed from (the quietest ones)
  * @param voicedFrames
  *            end point detection decision per frame of {@code epdFrameSize} samples
  * @param wholeSignalUsed
@@ -13,7 +15,7 @@ package org.ioe.tprsa.trace;
  *            the signal after silence removal
  */
 public record PreprocessTrace( int sampleRate, float[] normalisedSignal, double noiseMean, double noiseSd, double voicedThreshold,
-		int noiseSamples, int epdFrameSize, boolean[] voicedFrames, boolean wholeSignalUsed, float[] trimmedSignal, int frameSize,
+		int noiseSamples, int epdFrameSize, boolean[] noiseFrames, boolean[] voicedFrames, boolean wholeSignalUsed, float[] trimmedSignal, int frameSize,
 		int hop, float preEmphasis, float[] hammingWindow, float[][] rawFrames, float[][] preEmphasisedFrames, float[][] windowedFrames ) {
 
 	public double durationSec( ) {

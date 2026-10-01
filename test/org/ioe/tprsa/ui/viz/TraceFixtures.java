@@ -21,10 +21,10 @@ final class TraceFixtures {
 	private TraceFixtures( ) {
 	}
 
-	/** verification of Ship3.wav as "Ship", which the committed models recognise as another word */
+	/** a failed verification: Zebra0.wav verified as "Ship" (recognised as another word) */
 	static synchronized RecognitionTrace misrecognized( ) throws Exception {
 		if ( misrecognized == null ) {
-			misrecognized = new Operations( ).recognizeWithTrace( new File( "TrainWav/Ship/Ship3.wav" ), "Ship" );
+			misrecognized = new Operations( ).recognizeWithTrace( new File( "TrainWav/Zebra/Zebra0.wav" ), "Ship" );
 		}
 		return misrecognized;
 	}

@@ -73,7 +73,7 @@ public class PreProcess {
 	 */
 	public PreprocessTrace toTrace( ) {
 		return new PreprocessTrace( samplingRate, originalSignal.clone( ), epd.getNoiseMean( ), epd.getNoiseSd( ), epd.getVoicedThreshold( ),
-				epd.getNoiseSamples( ), epd.getFrameSize( ), epd.getVoicedFrames( ), epd.isWholeSignalUsed( ), afterEndPtDetection.clone( ),
+				epd.getNoiseSamples( ), epd.getFrameSize( ), epd.getNoiseFrames( ), epd.getVoicedFrames( ), epd.isWholeSignalUsed( ), afterEndPtDetection.clone( ),
 				samplePerFrame, samplePerFrame / 2, PRE_EMPHASIS, Arrays.copyOfRange( hammingWindow, 1, samplePerFrame + 1 ),
 				copy( rawFramedSignal ), copy( preEmphasisedFrames ), copy( framedSignal ) );
 	}

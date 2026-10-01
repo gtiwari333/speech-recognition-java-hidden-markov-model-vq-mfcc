@@ -43,7 +43,7 @@ Automatically exported from code.google.com/p/speech-recognition-java-hidden-mar
 | Step | What it does |
 |---|---|
 | Normalisation | divide every sample by the peak absolute amplitude, so the signal lies in [-1, 1] |
-| End point detection | the first 200 ms are taken as background noise; with their mean μ and standard deviation σ a sample is *voiced* when \|x − μ\| / σ ≥ 3 (one-dimensional Mahalanobis distance; 3σ covers 99.7 % of Gaussian noise). The signal is cut into 10 ms frames, a frame is kept when most of its samples are voiced, and the kept frames are concatenated (silence removal). An input shorter than 200 ms uses all of its samples as the noise estimate. When nothing is voiced, or the lead-in is perfectly constant, the signal is kept unchanged. Reference: *A New Silence Removal and Endpoint Detection Algorithm for Speech and Speaker Recognition Applications* (IIT Kharagpur) |
+| End point detection | the background noise is estimated from the quietest 200 ms of the recording: the 20 lowest-energy 10 ms frames, skipping all-zero frames (the recorder writes ~100 ms of digital silence at the start, and speech can begin right after it, so the paper's "first 200 ms" would mix silence and speech). With the noise mean μ and standard deviation σ a sample is *voiced* when \|x − μ\| / σ ≥ 3 (one-dimensional Mahalanobis distance; 3σ covers 99.7 % of Gaussian noise). The signal is cut into 10 ms frames, a frame is kept when most of its samples are voiced, and the kept frames are concatenated (silence removal). When nothing is voiced, or there is no non-silent frame to estimate the noise from, the signal is kept unchanged. Reference: *A New Silence Removal and Endpoint Detection Algorithm for Speech and Speaker Recognition Applications* (IIT Kharagpur) |
 | Framing | frames of N = 512 samples (23.2 ms) with 50 % overlap (hop 256), i.e. 2·L/N − 1 frames; a signal shorter than one frame becomes one zero padded frame |
 | Pre-emphasis | per frame, before windowing: s'(n) = s(n) − 0.95·s(n−1), and s'(1) = (1 − 0.95)·s(1) (HTK Book eq. 5.1) |
 | Windowing | Hamming window w(n) = 0.54 − 0.46·cos(2π(n−1)/(N−1)), n = 1..N (HTK Book eq. 5.2) |
@@ -119,11 +119,13 @@ Measured on the bundled `TrainWav/` recordings (5 words, 39 recordings):
 
 | | Accuracy |
 |---|---|
-| Training recordings, committed models | 38 / 39 |
-| Held-out recordings, 3-fold cross validation over 6 random splits | ≈ 84 % (196 / 234) |
+| Training recordings, committed models | 39 / 39 |
+| Held-out recordings, 3-fold cross validation over 6 random splits | ≈ 96 % (225 / 234) |
 
-With about 6 recordings per word the data set, not the algorithm, is the limiting factor; more
-recordings per word (and per speaker) is the most effective way to improve accuracy.
+Most of the earlier errors came from end point detection cutting away the speech of recordings where the
+word starts right after the recorder's leading silence (fixed by estimating the noise from the quietest
+200 ms). With about 6 recordings per word, more recordings per word (and per speaker) is now the most
+effective way to improve accuracy further.
 
 ### Verification against reference sources
 
@@ -133,7 +135,7 @@ recordings per word (and per speaker) is the most effective way to improve accur
 | FFT | Smith, *The Scientist and Engineer's Guide to DSP*, ch. 12 | unit test against a direct DFT for N = 2..512 |
 | Pre-emphasis, Hamming, mel filter bank, DCT, energy, deltas | Young et al., *The HTK Book*, ch. 5 (eqs. 5.1, 5.2, 5.13–5.16) | each block compared with the HTK formula: exact match |
 | Cepstral mean normalisation | *The HTK Book*, sec. 5.6 | unit test: every MFCC has zero mean over the utterance |
-| End point detection | Saha, Chakroborty, Senapati, *A New Silence Removal and Endpoint Detection Algorithm for Speech and Speaker Recognition Applications*, NCC 2005 | 200 ms noise estimate, 3σ threshold, 10 ms majority vote as in the paper |
+| End point detection | Saha, Chakroborty, Senapati, *A New Silence Removal and Endpoint Detection Algorithm for Speech and Speaker Recognition Applications*, NCC 2005 | 200 ms noise estimate, 3σ threshold, 10 ms majority vote as in the paper; deliberate deviation: the noise is taken from the quietest 200 ms instead of the first 200 ms (see Pre-processing), which raised held-out accuracy from ≈ 84 % to ≈ 96 % |
 | VQ codebook | Linde, Buzo, Gray, *An Algorithm for Vector Quantizer Design*, IEEE Trans. Commun. 28(1), 1980 | unit tests: k-means fixed point (every codeword is the mean of its cell), cluster separation |
 
 Practical additions that are not in the references: the 1e-4 probability floor, the 1e-10 energy floor and

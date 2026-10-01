@@ -21,7 +21,13 @@ class PreprocessTraceTest {
 		assertEquals( signal.length, t.normalisedSignal( ).length );
 		assertEquals( 1.5, t.durationSec( ), 1e-3 );
 		assertEquals( RATE / 100, t.epdFrameSize( ) );
-		assertEquals( RATE / 5, t.noiseSamples( ) );
+		assertEquals( 20 * ( RATE / 100 ), t.noiseSamples( ), "the quietest 20 frames of 10 ms" );
+		int noiseFrames = 0;
+		for ( int f = 0; f < t.noiseFrames( ).length; f++ ) {
+			noiseFrames += t.noiseFrames( )[ f ] ? 1 : 0;
+			assertFalse( t.noiseFrames( )[ f ] && t.voicedFrames( )[ f ], "frame " + f + " is both noise and voiced" );
+		}
+		assertEquals( 20, noiseFrames );
 		assertEquals( 3.0, t.voicedThreshold( ) );
 		assertFalse( t.wholeSignalUsed( ) );
 		assertTrue( t.noiseSd( ) > 0 && t.noiseSd( ) < 0.05, "noise sd " + t.noiseSd( ) );

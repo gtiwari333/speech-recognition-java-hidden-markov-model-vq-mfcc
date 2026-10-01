@@ -32,14 +32,14 @@ class OperationsRecognitionTraceTest {
 	}
 
 	/**
-	 * the results recorded before the refactoring: every recording is recognised as its folder's word except
-	 * Ship3.wav, which the committed models hear as Zebra. Update this if models/ is retrained.
+	 * with the committed models every training recording is recognised as its folder's word (39 / 39 since the
+	 * end point detection fix). Update this if models/ is retrained.
 	 */
 	@Test
 	void recognitionResultsAreUnchanged( ) throws Exception {
 		Operations op = new Operations( );
 		for ( File f : trainingFiles( ) ) {
-			String expected = f.getName( ).equals( "Ship3.wav" ) ? "Zebra" : f.getParentFile( ).getName( );
+			String expected = f.getParentFile( ).getName( );
 			assertEquals( expected, op.recognizeWithTrace( f, null ).recognizedWord( ), f.getName( ) );
 			assertEquals( expected, op.hmmGetWordFromFile( f ), f.getName( ) );
 		}
@@ -82,7 +82,8 @@ class OperationsRecognitionTraceTest {
 		assertTrue( t.isVerification( ) );
 		assertTrue( t.verified( ) );
 		assertEquals( 1, t.rankOf( "Apple" ) );
-		RecognitionTrace miss = new Operations( ).recognizeWithTrace( new File( "TrainWav/Ship/Ship3.wav" ), "Ship" );
+		// a Zebra recording verified as "Ship" must fail
+		RecognitionTrace miss = new Operations( ).recognizeWithTrace( new File( "TrainWav/Zebra/Zebra0.wav" ), "Ship" );
 		assertFalse( miss.verified( ) );
 		assertTrue( miss.rankOf( "Ship" ) > 1 );
 		assertTrue( miss.scoreOf( "ship" ).isPresent( ) );

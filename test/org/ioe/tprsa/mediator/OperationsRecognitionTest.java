@@ -13,9 +13,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * end-to-end regression test: recognise the bundled TrainWav recordings with the committed
  * models/codeBook/codebook.cbk and models/HMM/*.hmm. Needs the project root as working directory.
  * <p>
- * Baseline: 39 / 39 with the models retrained after the feature / Baum-Welch fixes (the original models
- * scored 36 / 39). These are the training recordings, so this only guards against regressions; held-out
- * 3-fold cross validation is ~80%. Retrain the models whenever the feature pipeline changes, otherwise this
+ * Baseline: 39 / 39 with the models retrained after the end point detection fix (the original models scored
+ * 36 / 39). These are the training recordings, so this only guards against regressions; held-out 3-fold
+ * cross validation is ~96%. Retrain the models whenever the feature pipeline changes, otherwise this
  * test will (rightly) fail.
  */
 @Tag( "integration" )
