@@ -7,7 +7,10 @@
  */
 package org.ioe.tprsa.audio;
 
+import java.util.Arrays;
+
 import org.ioe.tprsa.audio.preProcessings.EndPointDetection;
+import org.ioe.tprsa.trace.PreprocessTrace;
 
 /**
  * pre-processing steps
@@ -26,6 +29,10 @@ public class PreProcess {
 	 * frames before pre-emphasis and windowing, used for the log energy (HTK RAWENERGY = T)
 	 */
 	public float[][]	rawFramedSignal;
+	/**
+	 * frames after pre-emphasis, before windowing
+	 */
+	public float[][]	preEmphasisedFrames;
 	float[]				hammingWindow;
 	final EndPointDetection	epd;
 	final int					samplingRate;
@@ -47,12 +54,28 @@ public class PreProcess {
 		afterEndPtDetection = epd.doEndPointDetection( );
 		// ArrayWriter.printFloatArrayToFile(afterEndPtDetection, "endPt.txt");
 		doFraming( );
-		rawFramedSignal = new float[ noOfFrames ][ ];
-		for ( int i = 0; i < noOfFrames; i++ ) {
-			rawFramedSignal[ i ] = framedSignal[ i ].clone( );
-		}
+		rawFramedSignal = copy( framedSignal );
 		doPreEmphasis( );
+		preEmphasisedFrames = copy( framedSignal );
 		doWindowing( );
+	}
+
+	private static float[][] copy( float[][] frames ) {
+		float[][] c = new float[ frames.length ][ ];
+		for ( int i = 0; i < frames.length; i++ ) {
+			c[ i ] = frames[ i ].clone( );
+		}
+		return c;
+	}
+
+	/**
+	 * everything this pre-processing computed, as an independent copy
+	 */
+	public PreprocessTrace toTrace( ) {
+		return new PreprocessTrace( samplingRate, originalSignal.clone( ), epd.getNoiseMean( ), epd.getNoiseSd( ), epd.getVoicedThreshold( ),
+				epd.getNoiseSamples( ), epd.getFrameSize( ), epd.getVoicedFrames( ), epd.isWholeSignalUsed( ), afterEndPtDetection.clone( ),
+				samplePerFrame, samplePerFrame / 2, PRE_EMPHASIS, Arrays.copyOfRange( hammingWindow, 1, samplePerFrame + 1 ),
+				copy( rawFramedSignal ), copy( preEmphasisedFrames ), copy( framedSignal ) );
 	}
 
 	private void normalizePCM( ) {

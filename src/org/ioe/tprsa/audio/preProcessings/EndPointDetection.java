@@ -17,6 +17,40 @@ public class EndPointDetection {
 	private final float[] originalSignal; // input
 	private final int firstSamples;
 	private final int samplePerFrame;
+	private double noiseMean = Double.NaN;
+	private double noiseSd = Double.NaN;
+	private boolean[] voicedFrames = new boolean[0];
+	private boolean wholeSignalUsed;
+
+	public double getNoiseMean() {
+		return noiseMean;
+	}
+
+	public double getNoiseSd() {
+		return noiseSd;
+	}
+
+	/** voiced / silence decision per frame of {@link #getFrameSize()} samples */
+	public boolean[] getVoicedFrames() {
+		return voicedFrames.clone();
+	}
+
+	/** true when no speech was detected and the whole signal is returned */
+	public boolean isWholeSignalUsed() {
+		return wholeSignalUsed;
+	}
+
+	public double getVoicedThreshold() {
+		return VOICED_THRESHOLD;
+	}
+
+	public int getFrameSize() {
+		return samplePerFrame;
+	}
+
+	public int getNoiseSamples() {
+		return firstSamples;
+	}
 	/**
 	 * a sample is voiced when its Mahalanobis distance |x - mean| / sd from the background noise is at least this;
 	 * 3 standard deviations hold 99.7 % of Gaussian noise (Saha, Chakroborty, Senapati, NCC 2005)
@@ -61,8 +95,11 @@ public class EndPointDetection {
 			sum += Math.pow((originalSignal[i] - m), 2);
 		}
 		sd = Math.sqrt(sum / firstSamples);
+		noiseMean = m;
+		noiseSd = sd;
 		if (sd == 0 || Double.isNaN(sd)) {
 			// constant (e.g. digitally silent) lead-in: nothing to compare against
+			wholeSignalUsed = true;
 			return originalSignal.clone();
 		}
 		// System.err.println("summm sum :" + sum);
@@ -112,7 +149,12 @@ public class EndPointDetection {
 			}
 		}
 
+		voicedFrames = new boolean[frameCount];
+		for (int i = 0; i < frameCount; i++) {
+			voicedFrames[i] = voicedFrame[i] == 1;
+		}
 		if (usefulFramesCount == 0) {
+			wholeSignalUsed = true;
 			// no frame judged voiced: keep the signal rather than return nothing
 			return originalSignal.clone();
 		}
