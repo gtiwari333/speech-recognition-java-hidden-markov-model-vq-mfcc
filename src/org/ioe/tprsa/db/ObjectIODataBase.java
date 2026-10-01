@@ -11,6 +11,8 @@ import org.ioe.tprsa.classify.speech.CodeBookDictionary;
 import org.ioe.tprsa.classify.speech.HMMModel;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,7 +47,21 @@ public class ObjectIODataBase implements DataBase {
 	 * \speechTrainWav\\apple\\apple02.wav \speechTestWav\\cat\\cat01.wav \speechTestWav\\cat\\cat01.wav \speechTestWav\\cat\\cat01.wav \codeBook\\codeBook.cbk
 	 * \models\\HMM\\apple.hmm \models\\HMM\\cat.hmm \models\\GMM\\ram.gmm \models\\GMM\\shyam.gmm
 	 */
+	/**
+	 * folder that contains models/
+	 */
+	final Path		baseDir;
+
 	public ObjectIODataBase( ) {
+		this( Paths.get( "" ) );
+	}
+
+	/**
+	 * @param baseDir
+	 *            folder that contains the models/ folder
+	 */
+	public ObjectIODataBase( Path baseDir ) {
+		this.baseDir = baseDir;
 	}
 
 	/**
@@ -55,10 +71,10 @@ public class ObjectIODataBase implements DataBase {
 	public void setType( String type ) {
 		this.type = type;
 		if ( this.type.equalsIgnoreCase( "hmm" ) ) {
-			CURRENTFOLDER = "models" + File.separator + "HMM";
+			CURRENTFOLDER = baseDir.resolve( "models" ).resolve( "HMM" ).toString( );
 		}
 		if ( this.type.equalsIgnoreCase( "cbk" ) ) {
-			CURRENTFOLDER = "models" + File.separator + "codeBook";
+			CURRENTFOLDER = baseDir.resolve( "models" ).resolve( "codeBook" ).toString( );
 		}
 	}
 

@@ -149,11 +149,16 @@ public class Codebook {
 	 * calls: Centroid<br>
 	 * called by: volume
 	 */
-	public Codebook() throws Exception{
-		DataBase db = new ObjectIODataBase();
+	public Codebook() throws Exception {
+		this(new ObjectIODataBase());
+	}
+
+	/**
+	 * constructor to load a saved Codebook from the given database
+	 */
+	public Codebook(DataBase db) throws Exception {
 		db.setType("cbk");
-		CodeBookDictionary cbd = new CodeBookDictionary();
-		cbd = (CodeBookDictionary) db.readModel(null);
+		CodeBookDictionary cbd = (CodeBookDictionary) db.readModel(null);
 		dimension = cbd.getDimension();
 		centroids = cbd.getCent();
 		// System.out.println("Showing parameters");
@@ -233,8 +238,14 @@ public class Codebook {
 	 * calls: none<br>
 	 * called by: train
 	 */
-	public void saveToFile() throws Exception{
-		DataBase db = new ObjectIODataBase();
+	public void saveToFile() throws Exception {
+		saveToFile(new ObjectIODataBase());
+	}
+
+	/**
+	 * save Codebook into the given database
+	 */
+	public void saveToFile(DataBase db) throws Exception {
 		db.setType("cbk");
 		CodeBookDictionary cbd = new CodeBookDictionary();
 		// no need to save all the points,

@@ -46,7 +46,6 @@ package org.ioe.tprsa.classify.speech;
 
 import org.ioe.tprsa.db.DataBase;
 import org.ioe.tprsa.db.ObjectIODataBase;
-import org.ioe.tprsa.util.ArrayWriter;
 
 import java.util.Random;
 
@@ -480,13 +479,18 @@ public class HiddenMarkov {
 	 * @param word
 	 *            path of the file to load
 	 */
-	public HiddenMarkov( String word ) throws Exception{
-		DataBase db = new ObjectIODataBase( );
+	public HiddenMarkov( String word ) throws Exception {
+		this( word, new ObjectIODataBase( ) );
+	}
+
+	/**
+	 * loads the trained model of {@code word} from the given database
+	 */
+	public HiddenMarkov( String word, DataBase db ) throws Exception {
 		db.setType( "hmm" );
-		HMMModel model = new HMMModel( );
-		model = ( HMMModel ) db.readModel( word );// System.out.println(model.getClass());
+		HMMModel model = ( HMMModel ) db.readModel( word );
 		num_obSeq = model.getNum_obSeq( );
-		output = model.getOutput( );// ArrayWriter.print2DTabbedDoubleArrayToConole(output);
+		output = model.getOutput( );
 		transition = model.getTransition( );
 		pi = model.getPi( );
 		num_states = output.length;
@@ -554,15 +558,18 @@ public class HiddenMarkov {
 	 *
      */
 	public void save( String modelName ) throws Exception {
-		DataBase db = new ObjectIODataBase( );
+		save( modelName, new ObjectIODataBase( ) );
+	}
+
+	/**
+	 * saves the model as {@code modelName} into the given database
+	 */
+	public void save( String modelName, DataBase db ) throws Exception {
 		db.setType( "hmm" );
 		HMMModel model = new HMMModel( );
 		model.setOutput( output );
-		ArrayWriter.print2DTabbedDoubleArrayToConole( output );
 		model.setPi( pi );
-		ArrayWriter.printDoubleArrayToConole( pi );
 		model.setTransition( transition );
-		ArrayWriter.print2DTabbedDoubleArrayToConole( transition );
 		db.saveModel( model, modelName );
 	}
 }

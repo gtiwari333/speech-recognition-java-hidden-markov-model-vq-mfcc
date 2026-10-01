@@ -21,6 +21,8 @@ import org.ioe.tprsa.db.TrainingTestingWaveFiles;
 import org.ioe.tprsa.util.ArrayWriter;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -49,12 +51,27 @@ public class Operations {
 	HiddenMarkov				mkv;
 	DataBase					db;
 
+	/**
+	 * folder that contains TrainWav/ and models/
+	 */
+	final Path							baseDir;
+
 	public Operations( ) {
+		this( Paths.get( "" ) );
+	}
+
+	/**
+	 * @param baseDir
+	 *            folder that contains TrainWav/ and models/ ({@link #Operations()} uses the working directory)
+	 */
+	public Operations( Path baseDir ) {
+		this.baseDir = baseDir;
 		wd = new WaveData( );
 	}
 
 	public void generateCodebook( ) throws Exception {
-		trainTestWavs = new TrainingTestingWaveFiles( "train" );
+		allFeaturesList.clear( );
+		trainTestWavs = new TrainingTestingWaveFiles( "train", baseDir );
 		int totalFrames = 0;
 		wavFiles = trainTestWavs.readWaveFilesList( );
 		for (File[] wavFile : wavFiles) {
@@ -80,7 +97,7 @@ public class Operations {
 		}
 		System.out.println( "Generating Codebook........" );
 		Codebook cbk = new Codebook( pts, CODEBOOK_SIZE );
-		cbk.saveToFile( );
+		cbk.saveToFile( new ObjectIODataBase( baseDir ) );
 		System.out.println( "Codebook Generation Completed" );
 		// hmmTrain();
 	}
@@ -90,8 +107,8 @@ public class Operations {
 	 */
 	public void hmmTrain( ) throws Exception {
 		System.out.println( "inside hmm train" );
-		trainTestWavs = new TrainingTestingWaveFiles( "train" );
-		cb = new Codebook( );
+		trainTestWavs = new TrainingTestingWaveFiles( "train", baseDir );
+		cb = new Codebook( new ObjectIODataBase( baseDir ) );
 		// for each training word
 		int[][] quantized;
 		// extract features
@@ -117,7 +134,7 @@ public class Operations {
 			System.out.println( "Training......." );
 			mkv.setTrainSeq( quantized );
 			mkv.train( );
-			mkv.save( currentWord );
+			mkv.save( currentWord, new ObjectIODataBase( baseDir ) );
 			System.out.println( "Word  " + currentWord + " is trained" );
 		}
 		System.out.println( "HMM Train Completed" );
@@ -143,12 +160,12 @@ public class Operations {
 
 	public String hmmGetWordWithFeature( FeatureVector feature ) throws Exception {
 		Points[] pts = getPointsFromFeatureVector( feature );
-		cb = new Codebook( );
+		cb = new Codebook( new ObjectIODataBase( baseDir ) );
 		// quantize using Codebook
 		int[] quantized = cb.quantize( pts );
 
 		// read registered/trained words
-		db = new ObjectIODataBase( );
+		db = new ObjectIODataBase( baseDir );
 		db.setType( "hmm" );
 		words = db.readRegistered( );
 		db = null;
@@ -158,7 +175,7 @@ public class Operations {
 
 		// read hmmModels
 		for ( int i = 0; i < words.size( ); i++ ) {
-			hmmModels[ i ] = new HiddenMarkov( words.get( i ) );
+			hmmModels[ i ] = new HiddenMarkov( words.get( i ), new ObjectIODataBase( baseDir ) );
 		}
 		// find the likelihood by viterbi decoding of quantized sequence
 		double[] likelihoods = new double[ words.size( ) ];
@@ -230,7 +247,7 @@ public class Operations {
 	 * @return
 	 */
 	public boolean checkWord( String word ) {
-		db = new ObjectIODataBase( );
+		db = new ObjectIODataBase( baseDir );
 		db.setType( "hmm" );
 		words = db.readRegistered( );
 		for (String s : words) {
