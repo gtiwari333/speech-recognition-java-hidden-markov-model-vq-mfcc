@@ -11,6 +11,8 @@ import org.ioe.tprsa.audio.feature.Delta;
 import org.ioe.tprsa.audio.feature.Energy;
 import org.ioe.tprsa.audio.feature.FeatureVector;
 import org.ioe.tprsa.audio.feature.MFCC;
+import org.ioe.tprsa.trace.FeatureTrace;
+import org.ioe.tprsa.trace.MfccFrame;
 
 /**
  * Feature extraction, cepstral mean substraction, and merging with deltas
@@ -29,6 +31,9 @@ public class FeatureExtract {
 
 	private final double[][]		featureVector;
 	private final double[][]		mfccFeature;
+	private final double[][]		magnitudeSpectra;
+	private final double[][]		logMelEnergies;
+	private final double[][]		mfccBeforeCmn;
 	private double[][]		deltaMfcc;
 	private double[][]		deltaDeltaMfcc;
 	private double[]		energyVal;
@@ -66,6 +71,9 @@ public class FeatureExtract {
 		en = new Energy(samplePerFrame);
 		fv = new FeatureVector( );
 		mfccFeature = new double[ noOfFrames ][ numCepstra ];
+		magnitudeSpectra = new double[ noOfFrames ][ ];
+		logMelEnergies = new double[ noOfFrames ][ ];
+		mfccBeforeCmn = new double[ noOfFrames ][ ];
 		deltaMfcc = new double[ noOfFrames ][ numCepstra ];
 		deltaDeltaMfcc = new double[ noOfFrames ][ numCepstra ];
 		energyVal = new double[ noOfFrames ];
@@ -120,7 +128,11 @@ public class FeatureExtract {
 	private void calculateMFCC( ) {
 		for ( int i = 0; i < noOfFrames; i++ ) {
 			// for each frame i, make mfcc from current framed signal
-			mfccFeature[ i ] = mfcc.doMFCC( framedSignal[ i ] );// 2D data
+			MfccFrame frame = mfcc.computeFrame( framedSignal[ i ] );
+			magnitudeSpectra[ i ] = frame.magnitudeSpectrum( );
+			logMelEnergies[ i ] = frame.logMelEnergies( );
+			mfccFeature[ i ] = frame.cepstra( );
+			mfccBeforeCmn[ i ] = frame.cepstra( ).clone( );
 		}
 	}
 
@@ -144,5 +156,16 @@ public class FeatureExtract {
 				mfccFeature[ j ][ i ] -= mean;
 			}
 		}
+	}
+
+	/**
+	 * all intermediates of {@link #makeMfccFeatureVector()}
+	 */
+	public FeatureTrace toTrace( ) {
+		if ( fv.getFeatureVector( ) == null ) {
+			throw new IllegalStateException( "call makeMfccFeatureVector() first" );
+		}
+		return new FeatureTrace( magnitudeSpectra, logMelEnergies, mfccBeforeCmn, mfccFeature, deltaMfcc, deltaDeltaMfcc, energyVal,
+				deltaEnergy, deltaDeltaEnergy, featureVector, mfcc.getMelCentreBins( ) );
 	}
 }
