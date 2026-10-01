@@ -196,7 +196,7 @@ public class Operations {
 	 */
 	public FeatureVector extractFeatureFromExtractedAmplitureByteArray( float[] arrAmp ) {
 		prp = new PreProcess( arrAmp, samplePerFrame, samplingRate );
-		fExt = new FeatureExtract( prp.framedSignal, samplingRate, samplePerFrame );
+		fExt = new FeatureExtract( prp.framedSignal, prp.rawFramedSignal, samplingRate, samplePerFrame );
 		fExt.makeMfccFeatureVector( );
 		return fExt.getFeatureVector( );
 	}

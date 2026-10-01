@@ -150,12 +150,8 @@ public class HiddenMarkov {
 		q = new int[ len_obSeq ];
 
 		for ( int i = 0; i < num_states; i++ ) {
-			double temp = pi[ i ];
-			if ( temp == 0 ) {
-				temp = MIN_PROBABILITY;
-			}
-
-			phi[ 0 ][ i ] = Math.log( temp ) + Math.log( output[ i ][ currentSeq[ 0 ] ] );
+			// pi[i] = 0 gives log 0 = -infinity: a left-to-right model always starts in the first state
+			phi[ 0 ][ i ] = Math.log( pi[ i ] ) + Math.log( output[ i ][ currentSeq[ 0 ] ] );
 			psi[ 0 ][ i ] = 0;
 		}
 

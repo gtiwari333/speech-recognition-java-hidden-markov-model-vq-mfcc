@@ -14,7 +14,8 @@ class DCTTest {
 		double[] c = new DCT( 12, m ).performDCT( y );
 
 		assertEquals( 12, c.length );
-		assertEquals( 2.0 * m, c[ 0 ], 1e-9 );
+		// HTK Book eq. 5.14 includes the sqrt(2/N) factor
+		assertEquals( Math.sqrt( 2.0 / m ) * 2.0 * m, c[ 0 ], 1e-9 );
 		for ( int n = 1; n < c.length; n++ ) {
 			assertEquals( 0.0, c[ n ], 1e-9, "c[" + n + "]" );
 		}
@@ -29,7 +30,7 @@ class DCTTest {
 		}
 		double[] c = new DCT( 8, m ).performDCT( y );
 		for ( int n = 0; n < c.length; n++ ) {
-			assertEquals( n == target ? m / 2.0 : 0.0, c[ n ], 1e-9, "c[" + n + "]" );
+			assertEquals( n == target ? Math.sqrt( 2.0 / m ) * m / 2.0 : 0.0, c[ n ], 1e-9, "c[" + n + "]" );
 		}
 	}
 }

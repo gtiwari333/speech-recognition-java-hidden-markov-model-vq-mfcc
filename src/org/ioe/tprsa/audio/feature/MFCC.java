@@ -33,8 +33,8 @@ public class MFCC {
 	}
 
 	public double[] doMFCC(float[] framedSignal) {
-		// emphasize high frequencies, then take the Magnitude Spectrum
-		double[] bin = magnitudeSpectrum(preEmphasis(framedSignal));
+		// Magnitude Spectrum (pre-emphasis and windowing are done in PreProcess)
+		double[] bin = magnitudeSpectrum(framedSignal);
 		/*
 		 * cbin=frequencies of the channels in terms of FFT bin indices (cbin[i]
 		 * for the i -th channel)
@@ -73,24 +73,6 @@ public class MFCC {
 		return magSpectrum;
 	}
 
-	/**
-	 * emphasize high freq signal
-	 * 
-	 * @param inputSignal
-	 * @return
-	 */
-	private float[] preEmphasis(float[] inputSignal) {
-		// System.err.println(" inside pre Emphasis");
-		final double preEmphasisAlpha = 0.95;
-		float[] outputSignal = new float[inputSignal.length];
-		outputSignal[0] = inputSignal[0];
-		// apply pre-emphasis to each sample
-		for (int n = 1; n < inputSignal.length; n++) {
-			outputSignal[n] = (float) (inputSignal[n] - preEmphasisAlpha * inputSignal[n - 1]);
-		}
-		return outputSignal;
-	}
-
 	private int[] fftBinIndices() {
 		int[] cbin = new int[numMelFilters + 2];
 		cbin[0] = (int) Math.round(lowerFilterFreq / samplingRate * samplePerFrame);// cbin0
@@ -117,12 +99,14 @@ public class MFCC {
 			double num1 = 0.0, num2 = 0.0;
 			for (int i = cbin[k - 1]; i <= cbin[k]; i++) {
 				// System.out.println("Inside filter loop");
-				num1 += ((i - cbin[k - 1] + 1) / (double) (cbin[k] - cbin[k - 1] + 1)) * bin[i];
+				// rising edge: 0 at the previous centre, 1 at this centre
+				num1 += (cbin[k] == cbin[k - 1] ? 1.0 : (i - cbin[k - 1]) / (double) (cbin[k] - cbin[k - 1])) * bin[i];
 			}
 
 			for (int i = cbin[k] + 1; i <= cbin[k + 1]; i++) {
 				// System.out.println("Inside filter loop 222222");
-				num2 += (1 - ((i - cbin[k]) / (double) (cbin[k + 1] - cbin[k] + 1))) * bin[i];
+				// falling edge: 1 at this centre, 0 at the next centre
+				num2 += ((cbin[k + 1] - i) / (double) (cbin[k + 1] - cbin[k])) * bin[i];
 			}
 
 			temp[k] = num1 + num2;

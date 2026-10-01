@@ -23,15 +23,26 @@ class PreProcessTest {
 	}
 
 	@Test
-	void appliesHammingWindow( ) {
+	void hammingWindowMatchesHtk( ) {
 		PreProcess p = new PreProcess( TestSignals.silenceToneSilence( RATE / 2, RATE / 2, 1 ), SPF, RATE );
-		// window[j+1] = 0.54 - 0.46 cos(2*pi*(j+1)/N): ~0.08 at the edge, 1.0 in the middle
-		float[] frame = p.framedSignal[ 0 ];
-		int mid = SPF / 2 - 1;
-		float rawEdge = p.afterEndPtDetection[ SPF - 1 ];
-		float rawMid = p.afterEndPtDetection[ mid ];
-		assertEquals( rawEdge * 0.08, frame[ SPF - 1 ], 1e-4 );
-		assertEquals( rawMid * 1.0, frame[ mid ], 1e-4 );
+		// HTK Book eq. 5.2: 0.54 - 0.46 cos(2 pi (n - 1) / (N - 1)), n = 1..N: symmetric, 0.08 at both ends
+		for ( int n = 1; n <= SPF; n++ ) {
+			assertEquals( 0.54 - 0.46 * Math.cos( 2 * Math.PI * ( n - 1 ) / ( SPF - 1 ) ), p.hammingWindow[ n ], 1e-6 );
+		}
+		assertEquals( p.hammingWindow[ 1 ], p.hammingWindow[ SPF ], 1e-6 );
+	}
+
+	@Test
+	void preEmphasisIsAppliedBeforeWindowing( ) {
+		PreProcess p = new PreProcess( TestSignals.silenceToneSilence( RATE / 2, RATE / 2, 1 ), SPF, RATE );
+		float[] raw = p.rawFramedSignal[ 0 ], frame = p.framedSignal[ 0 ];
+		float k = PreProcess.PRE_EMPHASIS;
+		// HTK Book: s'_n = s_n - k s_(n-1) (eq. 5.1), then the Hamming window; s'_1 = (1 - k) s_1
+		assertEquals( ( 1 - k ) * raw[ 0 ] * p.hammingWindow[ 1 ], frame[ 0 ], 1e-6 );
+		for ( int j = 1; j < SPF; j++ ) {
+			assertEquals( ( raw[ j ] - k * raw[ j - 1 ] ) * p.hammingWindow[ j + 1 ], frame[ j ], 1e-5, "sample " + j );
+		}
+		assertArrayEquals( java.util.Arrays.copyOfRange( p.afterEndPtDetection, 0, SPF ), raw, "raw frames are unmodified" );
 	}
 
 	@Test

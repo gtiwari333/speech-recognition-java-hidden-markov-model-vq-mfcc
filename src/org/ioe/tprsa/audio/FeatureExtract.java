@@ -20,6 +20,7 @@ import org.ioe.tprsa.audio.feature.MFCC;
 public class FeatureExtract {
 
 	private final float[][]		framedSignal;
+	private final float[][]		rawFramedSignal;
 	private final int				noOfFrames;
 	/**
 	 * how many mfcc coefficients per frame
@@ -48,7 +49,18 @@ public class FeatureExtract {
 	 *            number of samples per frame
 	 */
 	public FeatureExtract( float[][] framedSignal, int samplingRate, int samplePerFrame ) {
+		this( framedSignal, framedSignal, samplingRate, samplePerFrame );
+	}
+
+	/**
+	 * @param framedSignal
+	 *            pre-emphasised, windowed frames for the MFCCs
+	 * @param rawFramedSignal
+	 *            the same frames before pre-emphasis and windowing, for the log energy (HTK RAWENERGY = T)
+	 */
+	public FeatureExtract( float[][] framedSignal, float[][] rawFramedSignal, int samplingRate, int samplePerFrame ) {
 		this.framedSignal = framedSignal;
+		this.rawFramedSignal = rawFramedSignal;
 		this.noOfFrames = framedSignal.length;
 		mfcc = new MFCC(samplePerFrame, samplingRate, numCepstra );
 		en = new Energy(samplePerFrame);
@@ -80,7 +92,7 @@ public class FeatureExtract {
 		delta.setRegressionWindow( 1 );// 1 for delta delta
 		deltaDeltaMfcc = delta.performDelta2D( deltaMfcc );
 		// energy
-		energyVal = en.calcEnergy( framedSignal );
+		energyVal = en.calcEnergy( rawFramedSignal );
 
 		delta.setRegressionWindow( 1 );
 		// energy delta

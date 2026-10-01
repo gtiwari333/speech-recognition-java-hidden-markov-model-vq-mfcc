@@ -56,6 +56,15 @@ class HiddenMarkovTest {
 	}
 
 	@Test
+	void viterbiWithZeroInitialProbabilitiesMatchesBruteForce( ) {
+		// pi = [1, 0, 0]: paths that start in another state are impossible (log 0 = -infinity)
+		double[] pi = { 1, 0, 0 };
+		int[] obs = { 2, 1, 1, 2, 0, 2 };
+		double expected = Math.log( bruteForce( pi, obs )[ 1 ] );
+		assertEquals( expected, model( pi ).viterbi( obs ), 1e-9 );
+	}
+
+	@Test
 	void viterbiStateSequenceIsLeftToRight( ) {
 		HiddenMarkov hmm = model( new double[] { 1, 0, 0 } );
 		hmm.viterbi( new int[] { 0, 0, 1, 1, 1, 2, 2 } );

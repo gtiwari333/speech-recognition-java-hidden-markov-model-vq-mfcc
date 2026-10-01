@@ -40,6 +40,26 @@ class MFCCTest {
 	}
 
 	@Test
+	void melFiltersAreTrianglesFromNeighbourToNeighbourCentre( ) throws Exception {
+		Method binIdx = MFCC.class.getDeclaredMethod( "fftBinIndices" );
+		Method filter = MFCC.class.getDeclaredMethod( "melFilter", double[].class, int[].class );
+		binIdx.setAccessible( true );
+		filter.setAccessible( true );
+		int[] cbin = ( int[] ) binIdx.invoke( mfcc );
+		for ( int k = 1; k + 1 < cbin.length; k++ ) {
+			double[] atCentre = new double[ SPF ], atPrev = new double[ SPF ], atNext = new double[ SPF ];
+			atCentre[ cbin[ k ] ] = 1;
+			atPrev[ cbin[ k - 1 ] ] = 1;
+			atNext[ cbin[ k + 1 ] ] = 1;
+			assertEquals( 1.0, ( ( double[] ) filter.invoke( mfcc, atCentre, cbin ) )[ k - 1 ], 1e-12, "peak of filter " + k );
+			if ( cbin[ k - 1 ] < cbin[ k ] ) {
+				assertEquals( 0.0, ( ( double[] ) filter.invoke( mfcc, atPrev, cbin ) )[ k - 1 ], 1e-12, "start of filter " + k );
+			}
+			assertEquals( 0.0, ( ( double[] ) filter.invoke( mfcc, atNext, cbin ) )[ k - 1 ], 1e-12, "end of filter " + k );
+		}
+	}
+
+	@Test
 	void melFilterRisingEdgeHasNonZeroWeight( ) throws Exception {
 		Method binIdx = MFCC.class.getDeclaredMethod( "fftBinIndices" );
 		Method filter = MFCC.class.getDeclaredMethod( "melFilter", double[].class, int[].class );

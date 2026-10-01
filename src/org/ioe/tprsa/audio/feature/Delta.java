@@ -44,91 +44,45 @@ public class Delta {
 		return 2 * mSqSum;
 	}
 
+	/**
+	 * regression deltas (HTK Book eq. 5.16): d_t = sum_{m=1..M} m (c_{t+m} - c_{t-m}) / (2 sum_{m=1..M} m^2);
+	 * at the start and end the first / last vector is replicated to fill the window (HTK default)
+	 */
 	public double[][] performDelta2D(double[][] data) {
 		int noOfMfcc = data[0].length;
 		int frameCount = data.length;
-
-		// 1. calculate sum of mSquare i.e., denominator
 		double mSqSum = denominator();
-		// 2.calculate numerator
 		double[][] delta = new double[frameCount][noOfMfcc];
-		
-		
-		if(frameCount<M){
-			
-			double [][]dataNew = new double [M][noOfMfcc];
-			delta = new double[M][noOfMfcc];
-			
-			
-			//i = frameCount 
-			// remaining rows stay 0
-			for ( int i = 0; i < frameCount; i++ ) {
-                System.arraycopy(data[i], 0, dataNew[i], 0, noOfMfcc);
-			}
-			
-			frameCount = M;
-			
-			data = dataNew;
-		}
-		
-		
-		for (int i = 0; i < noOfMfcc; i++) {
-			// handle the boundary
-			// 0 padding results best result
-			// from 0 to M
-			
-			for (int k = 0; k < M; k++) {
-				// delta[k][i] = 0; //0 padding
-				delta[k][i] = data[k][i]; // 0 padding
-			}
-			// from frameCount-M to frameCount
-			for (int k = frameCount - M; k < frameCount; k++) {
-				// delta[l][i] = 0;
-				delta[k][i] = data[k][i];
-			}
-			for (int j = M; j < frameCount - M; j++) {
-				// travel from -M to +M
-				double sumDataMulM = 0;
-				for (int m = -M; m <= +M; m++) {
-					// System.out.println("Current m -->\t"+m+
-					// "current j -->\t"+j + "data [m+j][i] -->\t"+data[m +
-					// j][i]);
-					sumDataMulM += m * data[m + j][i];
+		for (int t = 0; t < frameCount; t++) {
+			for (int i = 0; i < noOfMfcc; i++) {
+				double sum = 0;
+				for (int m = 1; m <= M; m++) {
+					sum += m * (data[clamp(t + m, frameCount)][i] - data[clamp(t - m, frameCount)][i]);
 				}
-				// 3. divide
-				delta[j][i] = sumDataMulM / mSqSum;
+				delta[t][i] = sum / mSqSum;
 			}
-		}// end of loop
-
-		// System.out.println("Delta **************");
-		// ArrayWriter.print2DTabbedDoubleArrayToConole(delta);
+		}
 		return delta;
-	}// end of fn
+	}
 
 	public double[] performDelta1D(double[] data) {
 		int frameCount = data.length;
-
 		double mSqSum = denominator();
 		double[] delta = new double[frameCount];
-
-		// boundaries: same handling as performDelta2D
-		int edge = Math.min(M, frameCount);
-		System.arraycopy(data, 0, delta, 0, edge);
-		// from frameCount-M to frameCount
-		System.arraycopy(data, frameCount - edge, delta, frameCount - edge, edge);
-		for (int j = M; j < frameCount - M; j++) {
-			// travel from -M to +M
-			double sumDataMulM = 0;
-			for (int m = -M; m <= +M; m++) {
-				// System.out.println("Current m -->\t"+m+ "current j -->\t"+j +
-				// "data [m+j][i] -->\t"+data[m + j][i]);
-				sumDataMulM += m * data[m + j];
+		for (int t = 0; t < frameCount; t++) {
+			double sum = 0;
+			for (int m = 1; m <= M; m++) {
+				sum += m * (data[clamp(t + m, frameCount)] - data[clamp(t - m, frameCount)]);
 			}
-			// 3. divide
-			delta[j] = sumDataMulM / mSqSum;
+			delta[t] = sum / mSqSum;
 		}
-		// System.out.println("Delta 1d **************");
-		// ArrayWriter.printDoubleArrayToConole(delta);
 		return delta;
+	}
+
+	/**
+	 * index of a frame inside [0, frameCount), i.e. replicate the first / last frame
+	 */
+	private static int clamp(int t, int frameCount) {
+		return Math.max(0, Math.min(frameCount - 1, t));
 	}
 }

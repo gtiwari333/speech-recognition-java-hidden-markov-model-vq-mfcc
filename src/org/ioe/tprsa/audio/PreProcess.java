@@ -22,9 +22,14 @@ public class PreProcess {
 	final int					samplePerFrame;		// how many samples in one frame
 	int					framedArrayLength;	// how many samples in framed array
 	public float[][]	framedSignal;
+	/**
+	 * frames before pre-emphasis and windowing, used for the log energy (HTK RAWENERGY = T)
+	 */
+	public float[][]	rawFramedSignal;
 	float[]				hammingWindow;
 	final EndPointDetection	epd;
 	final int					samplingRate;
+	static final float			PRE_EMPHASIS	= 0.95f;
 
 	/**
 	 * constructor, all steps are called frm here
@@ -42,6 +47,11 @@ public class PreProcess {
 		afterEndPtDetection = epd.doEndPointDetection( );
 		// ArrayWriter.printFloatArrayToFile(afterEndPtDetection, "endPt.txt");
 		doFraming( );
+		rawFramedSignal = new float[ noOfFrames ][ ];
+		for ( int i = 0; i < noOfFrames; i++ ) {
+			rawFramedSignal[ i ] = framedSignal[ i ].clone( );
+		}
+		doPreEmphasis( );
 		doWindowing( );
 	}
 
@@ -75,6 +85,19 @@ public class PreProcess {
 	}
 
 	/**
+	 * first order pre-emphasis of each frame, s'_n = s_n - k s_(n-1) (HTK Book eq. 5.1),
+	 * applied before windowing; the first sample uses s'_1 = (1 - k) s_1 as in HTK
+	 */
+	private void doPreEmphasis( ) {
+		for ( float[] frame : framedSignal ) {
+			for ( int n = frame.length - 1; n >= 1; n-- ) {
+				frame[ n ] -= PRE_EMPHASIS * frame[ n - 1 ];
+			}
+			frame[ 0 ] *= 1 - PRE_EMPHASIS;
+		}
+	}
+
+	/**
 	 * does hamming window on each frame
 	 */
 	private void doWindowing( ) {
@@ -83,7 +106,8 @@ public class PreProcess {
 		// prepare for through out the data
 		for ( int i = 1; i <= samplePerFrame; i++ ) {
 
-			hammingWindow[ i ] = ( float ) ( 0.54 - 0.46 * ( Math.cos( 2 * Math.PI * i / samplePerFrame ) ) );
+			// HTK Book eq. 5.2: 0.54 - 0.46 cos(2 pi (n - 1) / (N - 1)), n = 1..N
+			hammingWindow[ i ] = ( float ) ( 0.54 - 0.46 * ( Math.cos( 2 * Math.PI * ( i - 1 ) / ( samplePerFrame - 1 ) ) ) );
 		}
 		// do windowing
 		for ( int i = 0; i < noOfFrames; i++ ) {

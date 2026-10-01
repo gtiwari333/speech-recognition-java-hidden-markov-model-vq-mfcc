@@ -17,13 +17,26 @@ public class EndPointDetection {
 	private final float[] originalSignal; // input
 	private final int firstSamples;
 	private final int samplePerFrame;
+	/**
+	 * a sample is voiced when its Mahalanobis distance |x - mean| / sd from the background noise is at least this;
+	 * 3 standard deviations hold 99.7 % of Gaussian noise (Saha, Chakroborty, Senapati, NCC 2005)
+	 */
+	static final double VOICED_THRESHOLD = 3;
+	/**
+	 * frames of 10 ms are labelled voiced / silence by majority vote of their samples
+	 */
+	static final int FRAME_MS = 10;
+	/**
+	 * the first 200 ms are assumed to be background noise
+	 */
+	static final int NOISE_MS = 200;
 
 	public EndPointDetection(float[] originalSignal, int samplingRate) {
 		this.originalSignal = originalSignal;
-		samplePerFrame = samplingRate / 1000;
+		samplePerFrame = samplingRate * FRAME_MS / 1000;
 		// the first 200 ms are taken as background noise (according to formula),
 		// or the whole signal when it is shorter than that
-		firstSamples = Math.min( samplePerFrame * 200, originalSignal.length );
+		firstSamples = Math.min( samplingRate * NOISE_MS / 1000, originalSignal.length );
 	}
 
 	public float[] doEndPointDetection() {
@@ -57,11 +70,11 @@ public class EndPointDetection {
 		// System.err.println("sigma :" + sd);
 
 		// 3. identifying whether one-dimensional Mahalanobis distance function
-		// i.e. |x-u|/s greater than ####3 or not,
+		// i.e. |x-u|/s at least VOICED_THRESHOLD or not,
 		for (int i = 0; i < originalSignal.length; i++) {
 			// System.out.println("x-u/SD  ="+(Math.abs(originalSignal[i] -u ) /
 			// sd));
-			if ((Math.abs(originalSignal[i] - m) / sd) > 2) {
+			if ((Math.abs(originalSignal[i] - m) / sd) >= VOICED_THRESHOLD) {
 				voiced[i] = 1;
 			}
 			else {

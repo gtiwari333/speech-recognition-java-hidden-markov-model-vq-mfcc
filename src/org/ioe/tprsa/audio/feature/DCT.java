@@ -36,11 +36,13 @@ public class DCT {
 
 	public double[] performDCT(double[] y) {
 		double[] cepc = new double[numCepstra];
-		// perform DCT
+		// perform DCT (HTK Book eq. 5.14): c_n = sqrt(2/M) sum_{i=1..M} y_i cos(pi n / M (i - 0.5)), n = 0..numCepstra-1
+		double scale = Math.sqrt(2.0 / M);
 		for (int n = 1; n <= numCepstra; n++) {
 			for (int i = 1; i <= M; i++) {
 				cepc[n - 1] += y[i - 1] * Math.cos(Math.PI * (n - 1) / M * (i - 0.5));
 			}
+			cepc[n - 1] *= scale;
 		}
 		return cepc;
 	}
