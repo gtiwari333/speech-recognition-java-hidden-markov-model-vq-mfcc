@@ -93,14 +93,20 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 		left.setPreferredSize( new Dimension( 470, 300 ) );
 		JPanel leftHolder = new JPanel( new BorderLayout( ) );
 		leftHolder.add( left, BorderLayout.NORTH );
+		leftHolder.setMinimumSize( new Dimension( 470, 300 ) );
 		inspectorTabs.addTab( "Recognition steps", recognitionInspector );
 		inspectorTabs.addTab( "Training steps", trainingInspector );
+		inspectorTabs.setMinimumSize( new Dimension( 300, 300 ) );
 		JPanel statusBar = new JPanel( new BorderLayout( 8, 0 ) );
 		statusBar.setBorder( BorderFactory.createEmptyBorder( 2, 8, 2, 8 ) );
 		statusBar.add( jobStatus, BorderLayout.CENTER );
 		statusBar.add( jobProgress, BorderLayout.EAST );
 		JPanel main = new JPanel( new BorderLayout( ) );
-		main.add( new JSplitPane( JSplitPane.HORIZONTAL_SPLIT, leftHolder, inspectorTabs ), BorderLayout.CENTER );
+		JSplitPane split = new JSplitPane( JSplitPane.HORIZONTAL_SPLIT, leftHolder, inspectorTabs );
+		split.setDividerLocation( 480 );
+		split.setResizeWeight( 0 );
+		split.setContinuousLayout( true );
+		main.add( split, BorderLayout.CENTER );
 		main.add( statusBar, BorderLayout.SOUTH );
 		return main;
 	}
