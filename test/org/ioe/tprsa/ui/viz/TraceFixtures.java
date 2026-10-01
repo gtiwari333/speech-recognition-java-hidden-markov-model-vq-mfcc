@@ -6,9 +6,12 @@ import org.ioe.tprsa.trace.RecognitionTrace;
 import org.ioe.tprsa.trace.TrainingSession;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
+import java.util.stream.Stream;
 
 /** real traces computed once per test run, shared by the view tests */
 final class TraceFixtures {
@@ -49,11 +52,24 @@ final class TraceFixtures {
 	static synchronized TrainingSession training( ) throws Exception {
 		if ( training == null ) {
 			Path dir = Files.createTempDirectory( "viz-training" );
+			Runtime.getRuntime( ).addShutdownHook( new Thread( ( ) -> deleteTree( dir ) ) );
 			TestFiles.copyTree( Paths.get( "TrainWav" ), dir.resolve( "TrainWav" ) );
 			Files.createDirectories( dir.resolve( "TrainWav/Empty" ) );
 			Operations op = new Operations( dir );
 			training = TrainingSession.EMPTY.withCodebook( op.generateCodebookWithTrace( m -> { } ) ).withWords( op.hmmTrainWithTrace( m -> { } ) );
 		}
 		return training;
+	}
+
+	private static void deleteTree( Path dir ) {
+		try ( Stream< Path > paths = Files.walk( dir ) ) {
+			paths.sorted( Comparator.reverseOrder( ) ).forEach( p -> {
+				try {
+					Files.delete( p );
+				} catch ( IOException ignored ) {
+				}
+			} );
+		} catch ( IOException ignored ) {
+		}
 	}
 }

@@ -76,4 +76,21 @@ class JobRunnerTest {
 		assertTrue( onEdt( ( ) -> status.getText( ).contains( "Train first: no codebook found" ) ) );
 		assertEquals( "NullPointerException", JobRunner.message( new NullPointerException( ) ) );
 	}
+
+	@Test
+	void anExceptionInOnSuccessIsReportedAsAFailure( ) throws Exception {
+		JLabel status = new JLabel( );
+		JobRunner jobs = new JobRunner( status, new JProgressBar( ) );
+		CountDownLatch failed = new CountDownLatch( 1 );
+		AtomicReference< Throwable > error = new AtomicReference<>( );
+		SwingUtilities.invokeAndWait( ( ) -> jobs.run( "Showing", p -> "x", r -> {
+			throw new IllegalStateException( "boom" );
+		}, t -> {
+			error.set( t );
+			failed.countDown( );
+		} ) );
+		assertTrue( failed.await( 5, TimeUnit.SECONDS ) );
+		assertInstanceOf( IllegalStateException.class, error.get( ) );
+		assertTrue( onEdt( ( ) -> status.getText( ).contains( "boom" ) && !status.getText( ).endsWith( "done" ) ) );
+	}
 }

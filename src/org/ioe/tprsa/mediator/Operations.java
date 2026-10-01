@@ -152,7 +152,7 @@ public class Operations {
 			double[] logLikelihoods = mkv.train( );
 			mkv.save( currentWord, new ObjectIODataBase( baseDir ) );
 			traces.add( new WordTrainingTrace( currentWord, names, Arrays.asList( quantized ), logLikelihoods,
-					logLikelihoods.length < HiddenMarkov.MAX_ITERATIONS, initialTransition, initialOutput, mkv.getTransition( ),
+					mkv.hasConverged( ), initialTransition, initialOutput, mkv.getTransition( ),
 					mkv.getOutput( ), null ) );
 		}
 		progress.accept( "HMM training completed" );

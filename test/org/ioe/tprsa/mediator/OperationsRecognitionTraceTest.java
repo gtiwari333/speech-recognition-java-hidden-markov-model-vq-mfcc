@@ -69,6 +69,11 @@ class OperationsRecognitionTraceTest {
 		assertEquals( t.scores( ).get( 0 ).word( ), t.recognizedWord( ) );
 		for ( WordScore s : t.scores( ) ) {
 			assertEquals( frames, s.statePath( ).length );
+			assertEquals( 0, s.statePath( )[ 0 ], "starts in the first state" );
+			for ( int f = 1; f < frames; f++ ) {
+				int step = s.statePath( )[ f ] - s.statePath( )[ f - 1 ];
+				assertTrue( step >= 0 && step <= 2, s.word( ) + " frame " + f + ": left-to-right, skips at most one state" );
+			}
 			assertEquals( frames, s.viterbiGrid( ).length );
 			double best = Arrays.stream( s.viterbiGrid( )[ frames - 1 ] ).max( ).orElseThrow( );
 			assertEquals( s.score( ), best, 1e-9 );

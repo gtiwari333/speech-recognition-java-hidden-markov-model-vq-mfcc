@@ -28,7 +28,7 @@ public final class ConvergenceStep implements StepView< TrainingSession > {
 		return WordSteps.word( session, state ).filter( w -> !w.isSkipped( ) )
 				.map( w -> String.format( "Baum-Welch (EM) re-estimates the transition and output probabilities so that the training sequences become more "
 						+ "likely; each iteration can only increase the total log likelihood. %s stopped after %d iterations (%s), log likelihood %.1f.",
-						w.word( ), w.iterations( ), w.converged( ) ? "converged: change below 1e-5" : "iteration limit reached", w.finalLogLikelihood( ) ) )
+						w.word( ), w.iterations( ), w.converged( ) ? "converged: relative change below 1e-5" : "iteration limit reached", w.finalLogLikelihood( ) ) )
 				.orElse( "Run Train HMM to see the convergence." );
 	}
 

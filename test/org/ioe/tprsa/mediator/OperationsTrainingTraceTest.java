@@ -53,6 +53,7 @@ class OperationsTrainingTraceTest {
 		for ( CodebookTrace.SplitTrace s : codebook.splits( ) ) {
 			double[] d = s.distortions( );
 			assertTrue( d.length >= 2, "distortion after the split plus at least one k-means iteration" );
+			// only last <= first: the distortion sums plain distances while k-means minimises squared distances, so it need not fall at every iteration
 			assertTrue( d[ d.length - 1 ] <= d[ 0 ], s.codebookSize( ) + " codewords: k-means must not end worse than it started" );
 			assertTrue( d[ d.length - 1 ] < previousFinal, "more codewords, lower distortion" );
 			previousFinal = d[ d.length - 1 ];
@@ -76,7 +77,11 @@ class OperationsTrainingTraceTest {
 				assertTrue( seq.length > 0 );
 				assertTrue( Arrays.stream( seq ).allMatch( c -> c >= 0 && c < 256 ) );
 			}
-			assertEquals( w.iterations( ) < HiddenMarkov.MAX_ITERATIONS, w.converged( ) );
+			// bundled words: only Hello converges (27 iterations); the others run into the iteration limit
+			assertEquals( "Hello".equals( w.word( ) ), w.converged( ), w.word( ) );
+			if ( !w.converged( ) ) {
+				assertEquals( HiddenMarkov.MAX_ITERATIONS, w.iterations( ), w.word( ) + " stopped at the limit" );
+			}
 			assertEquals( 6, w.initialTransition( ).length );
 			assertEquals( 256, w.finalOutput( )[ 0 ].length );
 			HiddenMarkov saved = new HiddenMarkov( w.word( ), new ObjectIODataBase( dir ) );

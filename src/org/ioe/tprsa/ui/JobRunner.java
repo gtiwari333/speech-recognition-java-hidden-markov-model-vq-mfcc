@@ -75,7 +75,12 @@ public final class JobRunner {
 				try {
 					T result = get( );
 					status.setText( description + ": done" );
-					onSuccess.accept( result );
+					try {
+						onSuccess.accept( result );
+					} catch ( RuntimeException e ) {
+						status.setText( description + " failed: " + message( e ) );
+						onFailure.accept( e );
+					}
 				} catch ( ExecutionException e ) {
 					Throwable cause = e.getCause( ) == null ? e : e.getCause( );
 					status.setText( description + " failed: " + message( cause ) );

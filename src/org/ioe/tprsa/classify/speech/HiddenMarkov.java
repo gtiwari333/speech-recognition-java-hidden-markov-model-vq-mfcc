@@ -90,6 +90,7 @@ public class HiddenMarkov {
 	 * Baum-Welch stops after this many iterations, or earlier once the log likelihood stops improving
 	 */
 	public static final int	MAX_ITERATIONS			= 50;
+	private boolean			converged;
 	static final double	CONVERGENCE_THRESHOLD	= 1e-5;
 	/**
 	 * discrete set of observation symbols example: sequence of colour of balls
@@ -399,17 +400,24 @@ public class HiddenMarkov {
 	 * @return total log likelihood of the training sequences under the model before each re-estimation
 	 */
 	public double[] train( ) {
+		converged = false;
 		List< Double > logLikelihoods = new ArrayList<>( );
 		double previous = Double.NEGATIVE_INFINITY;
 		for ( int i = 0; i < MAX_ITERATIONS; i++ ) {
 			double logLikelihood = reestimate( );
 			logLikelihoods.add( logLikelihood );
 			if ( Math.abs( logLikelihood - previous ) < CONVERGENCE_THRESHOLD * Math.abs( logLikelihood ) ) {
+				converged = true;
 				break;
 			}
 			previous = logLikelihood;
 		}
 		return logLikelihoods.stream( ).mapToDouble( Double::doubleValue ).toArray( );
+	}
+
+	/** @return true when the last train() stopped because the change fell below the threshold, false when it hit MAX_ITERATIONS */
+	public boolean hasConverged( ) {
+		return converged;
 	}
 
 	/** @return copy of the transition matrix a[i][j] */

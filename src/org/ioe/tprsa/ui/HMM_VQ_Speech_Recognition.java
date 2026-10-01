@@ -219,6 +219,10 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 		return verifyPanel;
 	}
 
+	private void showNothingToRecognize( ) {
+		jobStatus.setText( getWordsComboBoxVerify( ).getItemCount( ) == 0 ? "Train first: no trained words" : "Record a word first" );
+	}
+
 	private JButton getBtnVerify( ) {
 		if ( btnVerify == null ) {
 			btnVerify = new JButton( "Verify" );
@@ -232,6 +236,8 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 							showRecognition( trace );
 						}, this::showError );
 					}
+				} else {
+					showNothingToRecognize( );
 				}
 			});
 			btnVerify.setBounds( 126, 111, 89, 24 );
@@ -290,6 +296,8 @@ public class HMM_VQ_Speech_Recognition extends JFrame {
 							showRecognition( trace );
 						}, this::showError );
 					}
+				} else {
+					showNothingToRecognize( );
 				}
 			});
 			getWordButton.setBounds( new Rectangle( 13, 8, 202, 24 ) );
