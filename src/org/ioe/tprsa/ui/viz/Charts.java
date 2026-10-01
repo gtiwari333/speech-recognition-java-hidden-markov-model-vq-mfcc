@@ -11,6 +11,7 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.ValueMarker;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.LookupPaintScale;
+import org.jfree.chart.renderer.PaintScale;
 import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.xy.XYBlockRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
@@ -187,18 +188,36 @@ public final class Charts {
 			for ( int y = 0; y < z[ x ].length; y++ ) {
 				double v = z[ x ][ y ];
 				if ( !Double.isNaN( v ) ) {
-					cells.add( new double[] { x, y, v == Double.NEGATIVE_INFINITY ? min : v } );
+					cells.add( new double[] { x, y, v } );
 				}
 			}
 		}
 		DefaultXYZDataset data = new DefaultXYZDataset( );
 		data.addSeries( title, new double[][] { cells.stream( ).mapToDouble( c -> c[ 0 ] ).toArray( ), cells.stream( ).mapToDouble( c -> c[ 1 ] ).toArray( ),
 				cells.stream( ).mapToDouble( c -> c[ 2 ] ).toArray( ) } );
-		LookupPaintScale scale = new LookupPaintScale( min, max, Color.WHITE );
+		LookupPaintScale lookup = new LookupPaintScale( min, max, Color.WHITE );
 		for ( int i = 0; i < 64; i++ ) {
 			float f = i / 63f;
-			scale.add( min + ( max - min ) * f, new Color( Color.HSBtoRGB( 0.66f - 0.5f * f, 0.85f, 0.35f + 0.6f * f ) ) );
+			lookup.add( min + ( max - min ) * f, new Color( Color.HSBtoRGB( 0.66f - 0.5f * f, 0.85f, 0.35f + 0.6f * f ) ) );
 		}
+		final double lowest = min;
+		// the dataset keeps the real values (-infinity included) for the tooltips; only the colour is clamped
+		PaintScale scale = new PaintScale( ) {
+			@Override
+			public double getLowerBound( ) {
+				return lookup.getLowerBound( );
+			}
+
+			@Override
+			public double getUpperBound( ) {
+				return lookup.getUpperBound( );
+			}
+
+			@Override
+			public Paint getPaint( double value ) {
+				return lookup.getPaint( value < lowest ? lowest : value );
+			}
+		};
 		XYBlockRenderer renderer = new XYBlockRenderer( );
 		renderer.setPaintScale( scale );
 		renderer.setDefaultToolTipGenerator( new StandardXYZToolTipGenerator( ) );
@@ -244,6 +263,7 @@ public final class Charts {
 		plot.setRangeAxis( index, new NumberAxis( axisLabel ) );
 		plot.mapDatasetToRangeAxis( index, index );
 		XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer( true, false );
+		renderer.setDefaultToolTipGenerator( new org.jfree.chart.labels.StandardXYToolTipGenerator( ) );
 		renderer.setDefaultSeriesVisibleInLegend( false );
 		renderer.setAutoPopulateSeriesPaint( false );
 		renderer.setDefaultPaint( new Color( 200, 60, 60, 140 ) );

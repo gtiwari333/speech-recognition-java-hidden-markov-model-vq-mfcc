@@ -20,6 +20,7 @@ class ChartsTest {
 		Charts.addInterval( c, 0, 1, Charts.VOICED );
 		Charts.addSecondary( c, "weight", Charts.Series.of( "w", new double[] { 0, 1, 0 } ) );
 		assertEquals( 2, c.getXYPlot( ).getDatasetCount( ) );
+		assertNotNull( c.getXYPlot( ).getRenderer( 1 ).getDefaultToolTipGenerator( ) );
 		assertEquals( 1, ViewTestSupport.renderAll( Charts.panel( c ) ) );
 		assertEquals( 1, ViewTestSupport.renderAll( Charts.panel( Charts.stepLine( "s", "x", "y", Charts.Series.of( "q", new double[] { 0, 0, 1 } ) ) ) ) );
 	}
@@ -41,6 +42,10 @@ class ChartsTest {
 		JFreeChart c = Charts.heatMap( "h", "x", "y", z );
 		XYPlot plot = c.getXYPlot( );
 		assertEquals( 3, plot.getDataset( ).getItemCount( 0 ), "the NaN cell is left empty" );
+		assertEquals( Double.NEGATIVE_INFINITY, ( ( org.jfree.data.xy.XYZDataset ) plot.getDataset( ) ).getZValue( 0, 1 ), "tooltips keep the real value" );
+		org.jfree.chart.renderer.xy.XYBlockRenderer block = ( org.jfree.chart.renderer.xy.XYBlockRenderer ) plot.getRenderer( );
+		assertEquals( block.getPaintScale( ).getPaint( 1.0 ), block.getPaintScale( ).getPaint( Double.NEGATIVE_INFINITY ), "-infinity gets the lowest colour" );
+		assertNotNull( block.getDefaultToolTipGenerator( ) );
 		Charts.annotateCells( c, z, "%.1f" );
 		c.createBufferedImage( 300, 200 );
 		Charts.heatMap( "constant", "x", "y", new double[][] { { 2, 2 } } ).createBufferedImage( 300, 200 );
