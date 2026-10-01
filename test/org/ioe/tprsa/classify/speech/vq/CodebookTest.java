@@ -88,4 +88,23 @@ class CodebookTest {
 		Codebook cb = new Codebook( new Points[] { new Points( new double[] { 1 } ) }, 4 );
 		assertNull( cb.centroids, "constructor only prints an error; callers get an NPE later" );
 	}
+
+	@Test
+	void quantizeWithTraceRecordsCodewordsAndDistances( ) {
+		Points[] pts = clusters( new double[][] { { 1, 2 }, { 4, 9 }, { 8, 3 }, { 12, 12 } }, 20, 0.5, 6 );
+		Codebook cb = new Codebook( pts, 4 );
+		org.ioe.tprsa.trace.VqTrace t = cb.quantizeWithTrace( pts );
+		assertEquals( 4, t.codebookSize( ) );
+		assertEquals( 4, cb.size( ) );
+		assertArrayEquals( cb.quantize( pts ), t.codewords( ) );
+		double sum = 0;
+		for ( int i = 0; i < pts.length; i++ ) {
+			double[] c = cb.centroids[ t.codewords( )[ i ] ].getAllCo( );
+			double d = Math.hypot( pts[ i ].getCo( 0 ) - c[ 0 ], pts[ i ].getCo( 1 ) - c[ 1 ] );
+			assertEquals( d, t.distances( )[ i ], 1e-12 );
+			sum += d;
+		}
+		assertEquals( sum / pts.length, t.meanDistance( ), 1e-12 );
+		assertEquals( 4, t.distinctCodewords( ) );
+	}
 }

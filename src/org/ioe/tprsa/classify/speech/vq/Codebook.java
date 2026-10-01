@@ -47,6 +47,7 @@ package org.ioe.tprsa.classify.speech.vq;
 import org.ioe.tprsa.classify.speech.CodeBookDictionary;
 import org.ioe.tprsa.db.DataBase;
 import org.ioe.tprsa.db.ObjectIODataBase;
+import org.ioe.tprsa.trace.VqTrace;
 
 /**
  * last updated on June 15, 2002<br>
@@ -301,6 +302,26 @@ public class Codebook {
 			output[i] = closestCentroidToPoint(pts[i]);
 		}
 		return output;
+	}
+
+	/**
+	 * like {@link #quantize(Points[])}, also recording the distance of each point to its codeword
+	 */
+	public VqTrace quantizeWithTrace(Points[] pts) {
+		int[] output = new int[pts.length];
+		double[] distances = new double[pts.length];
+		for (int i = 0; i < pts.length; i++) {
+			output[i] = closestCentroidToPoint(pts[i]);
+			distances[i] = getDistance(pts[i], centroids[output[i]]);
+		}
+		return new VqTrace(centroids.length, output, distances);
+	}
+
+	/**
+	 * number of codewords
+	 */
+	public int size() {
+		return centroids.length;
 	}
 
 	/**

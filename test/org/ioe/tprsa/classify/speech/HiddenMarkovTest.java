@@ -207,4 +207,27 @@ class HiddenMarkovTest {
 			}
 		}
 	}
+
+	@Test
+	void viterbiKeepsItsScoreGridAndPath( ) {
+		HiddenMarkov hmm = model( new double[] { 1, 0, 0 } );
+		int[] obs = { 0, 0, 1, 1, 2, 2, 1 };
+		double score = hmm.viterbi( obs );
+		double[][] grid = hmm.getViterbiGrid( );
+		assertEquals( obs.length, grid.length );
+		assertEquals( 3, grid[ 0 ].length );
+		double best = Double.NEGATIVE_INFINITY;
+		for ( double v : grid[ obs.length - 1 ] ) {
+			best = Math.max( best, v );
+		}
+		assertEquals( score, best, 1e-12 );
+		int[] path = hmm.getStatePath( );
+		assertEquals( obs.length, path.length );
+		assertEquals( 0, path[ 0 ] );
+		for ( int t = 1; t < path.length; t++ ) {
+			assertTrue( path[ t ] >= path[ t - 1 ] && path[ t ] - path[ t - 1 ] <= 2, "left-to-right, skips at most one state" );
+		}
+		grid[ 0 ][ 0 ] = 42;
+		assertNotEquals( 42, hmm.getViterbiGrid( )[ 0 ][ 0 ], "returns a copy" );
+	}
 }

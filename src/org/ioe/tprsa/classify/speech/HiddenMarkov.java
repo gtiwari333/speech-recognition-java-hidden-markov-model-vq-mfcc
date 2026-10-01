@@ -131,6 +131,11 @@ public class HiddenMarkov {
 	public int[] q;
 
 	/**
+	 * score grid of the last {@link #viterbi(int[])} call, [frame][state]
+	 */
+	private double[][] lastViterbiGrid;
+
+	/**
 	 * viterbi algorithm used to get best state sequence and probability<br>
 	 * calls: none<br>
 	 * called by: volume
@@ -193,7 +198,26 @@ public class HiddenMarkov {
 			q[ t ] = psi[ t + 1 ][ q[ t + 1 ] ];
 		}
 
+		lastViterbiGrid = phi;
 		return max;
+	}
+
+	/**
+	 * @return copy of the Viterbi score grid of the last {@link #viterbi(int[])} call, [frame][state]
+	 */
+	public double[][] getViterbiGrid( ) {
+		double[][] copy = new double[ lastViterbiGrid.length ][ ];
+		for ( int t = 0; t < copy.length; t++ ) {
+			copy[ t ] = lastViterbiGrid[ t ].clone( );
+		}
+		return copy;
+	}
+
+	/**
+	 * @return best state path of the last {@link #viterbi(int[])} call
+	 */
+	public int[] getStatePath( ) {
+		return q.clone( );
 	}
 
 	/**
