@@ -18,12 +18,16 @@ import org.ioe.tprsa.classify.speech.vq.Points;
 import org.ioe.tprsa.db.DataBase;
 import org.ioe.tprsa.db.ObjectIODataBase;
 import org.ioe.tprsa.db.TrainingTestingWaveFiles;
-import org.ioe.tprsa.util.ArrayWriter;
+import org.ioe.tprsa.trace.RecognitionTrace;
+import org.ioe.tprsa.trace.VqTrace;
+import org.ioe.tprsa.trace.WordScore;
 
+import javax.sound.sampled.AudioFormat;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
@@ -140,60 +144,97 @@ public class Operations {
 		System.out.println( "HMM Train Completed" );
 	}
 
-	public String hmmGetWordFromFile( File speechFile ) throws Exception {
-		// extract features
-		FeatureVector feature = extractFeatureFromFile( speechFile );
-		return hmmGetWordWithFeature( feature );
-	}
-
 	public String hmmGetWordFromFileByteArray( byte[] byteArray ) throws Exception {
 		// extract features
 		FeatureVector feature = extractFeatureFromFileByteArray( byteArray );
 		return hmmGetWordWithFeature( feature );
 	}
 
+	public String hmmGetWordFromFile( File speechFile ) throws Exception {
+		return recognizeWithTrace( speechFile, null ).recognizedWord( );
+	}
+
 	public String hmmGetWordFromAmplitureArray( float[] byteArray ) throws Exception {
-		// extract features
-		FeatureVector feature = extractFeatureFromExtractedAmplitureByteArray( byteArray );
-		return hmmGetWordWithFeature( feature );
+		return recognizeWithTrace( byteArray, null ).recognizedWord( );
 	}
 
 	public String hmmGetWordWithFeature( FeatureVector feature ) throws Exception {
-		Points[] pts = getPointsFromFeatureVector( feature );
+		List< String > registered = requireTrainedModels( );
 		cb = new Codebook( new ObjectIODataBase( baseDir ) );
-		// quantize using Codebook
-		int[] quantized = cb.quantize( pts );
+		return scoreWords( registered, cb.quantizeWithTrace( getPointsFromFeatureVector( feature ) ).codewords( ) ).get( 0 ).word( );
+	}
 
-		// read registered/trained words
+	/**
+	 * recognise captured audio, keeping every intermediate result
+	 *
+	 * @param expectedWord
+	 *            word being verified, or null
+	 */
+	public RecognitionTrace recognizeWithTrace( float[] samples, String expectedWord ) throws Exception {
+		return recognize( "recording", samples, expectedWord );
+	}
+
+	/**
+	 * recognise a 16-bit mono 22050 Hz WAV file, keeping every intermediate result
+	 *
+	 * @param expectedWord
+	 *            word being verified, or null
+	 */
+	public RecognitionTrace recognizeWithTrace( File wav, String expectedWord ) throws Exception {
+		float[] samples = wd.extractAmplitudeFromFile( wav );
+		checkFormat( wd.getFormat( ), wav.getName( ) );
+		return recognize( wav.getName( ), samples, expectedWord );
+	}
+
+	private RecognitionTrace recognize( String source, float[] samples, String expectedWord ) throws Exception {
+		List< String > registered = requireTrainedModels( );
+		prp = new PreProcess( samples, samplePerFrame, samplingRate );
+		fExt = new FeatureExtract( prp.framedSignal, prp.rawFramedSignal, samplingRate, samplePerFrame );
+		fExt.makeMfccFeatureVector( );
+		cb = new Codebook( new ObjectIODataBase( baseDir ) );
+		VqTrace vq = cb.quantizeWithTrace( getPointsFromFeatureVector( fExt.getFeatureVector( ) ) );
+		List< WordScore > scores = scoreWords( registered, vq.codewords( ) );
+		return new RecognitionTrace( source, prp.toTrace( ), fExt.toTrace( ), vq, scores, scores.get( 0 ).word( ), expectedWord );
+	}
+
+	/**
+	 * Viterbi score of every word model, best first (ties keep the alphabetical order, like before)
+	 */
+	private List< WordScore > scoreWords( List< String > registered, int[] quantized ) throws Exception {
+		List< WordScore > scores = new ArrayList<>( );
+		for ( String word : registered ) {
+			HiddenMarkov hmm = new HiddenMarkov( word, new ObjectIODataBase( baseDir ) );
+			double score = hmm.viterbi( quantized );
+			scores.add( new WordScore( word, score, hmm.getStatePath( ), hmm.getViterbiGrid( ) ) );
+		}
+		scores.sort( Comparator.comparingDouble( WordScore::score ).reversed( ) );
+		return scores;
+	}
+
+	/**
+	 * @return the registered words
+	 * @throws IllegalStateException
+	 *             when the codebook or the word models have not been trained yet
+	 */
+	private List< String > requireTrainedModels( ) {
+		File codebookFile = baseDir.resolve( "models" ).resolve( "codeBook" ).resolve( "codebook.cbk" ).toFile( );
+		if ( !codebookFile.isFile( ) ) {
+			throw new IllegalStateException( "Train first: no codebook found (" + codebookFile + ")" );
+		}
 		db = new ObjectIODataBase( baseDir );
 		db.setType( "hmm" );
-		words = db.readRegistered( );
-		db = null;
-		System.out.println( "registred words ::: count : " + words.size( ) );
-		ArrayWriter.printStringArrayToConole( words );
-		HiddenMarkov[] hmmModels = new HiddenMarkov[words.size()];
+		List< String > registered = db.readRegistered( );
+		if ( registered.isEmpty( ) ) {
+			throw new IllegalStateException( "Train first: no HMM models found in " + baseDir.resolve( "models" ).resolve( "HMM" ) );
+		}
+		return registered;
+	}
 
-		// read hmmModels
-		for ( int i = 0; i < words.size( ); i++ ) {
-			hmmModels[ i ] = new HiddenMarkov( words.get( i ), new ObjectIODataBase( baseDir ) );
+	private void checkFormat( AudioFormat format, String name ) {
+		if ( format.getSampleRate( ) != samplingRate || format.getChannels( ) != 1 || format.getSampleSizeInBits( ) != 16 ) {
+			throw new IllegalArgumentException( name + ": expected 16-bit mono " + samplingRate + " Hz, got " + format.getSampleSizeInBits( )
+					+ "-bit, " + format.getChannels( ) + " channel(s), " + ( int ) format.getSampleRate( ) + " Hz" );
 		}
-		// find the likelihood by viterbi decoding of quantized sequence
-		double[] likelihoods = new double[ words.size( ) ];
-		for ( int j = 0; j < words.size( ); j++ ) {
-			likelihoods[ j ] = hmmModels[ j ].viterbi( quantized );
-			System.out.println( "Likelihood with " + words.get( j ) + " is " + likelihoods[ j ] );
-		}
-		// find the largest likelihood
-		double highest = Double.NEGATIVE_INFINITY;
-		int wordIndex = -1;
-		for ( int j = 0; j < words.size( ); j++ ) {
-			if ( likelihoods[ j ] > highest ) {
-				highest = likelihoods[ j ];
-				wordIndex = j;
-			}
-		}
-		System.out.println( "Best matched word " + words.get( wordIndex ) );
-		return words.get( wordIndex );
 	}
 
 	/**
