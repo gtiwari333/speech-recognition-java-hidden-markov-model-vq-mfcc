@@ -18,21 +18,22 @@ class RecognitionViewsTest {
 
 	@Test
 	void everyViewRendersForAMisrecognition( ) throws Exception {
-		RecognitionTrace t = TraceFixtures.misrecognized( );
-		int middle = t.features( ).frameCount( ) / 2;
-		for ( StepView< RecognitionTrace > v : firstFour( ) ) {
-			for ( ViewState s : List.of( new ViewState( 0, null ), new ViewState( middle, "Ship" ), new ViewState( 10_000, null ) ) ) {
-				assertTrue( ViewTestSupport.renderAll( v.build( t, s ) ) >= 1, v.title( ) );
-				assertFalse( v.explanation( t, s ).isBlank( ), v.title( ) );
+		for ( RecognitionTrace t : List.of( TraceFixtures.misrecognized( ), TraceFixtures.recognized( ) ) ) {
+			int middle = t.features( ).frameCount( ) / 2;
+			for ( StepView< RecognitionTrace > v : firstFour( ) ) {
+				for ( ViewState s : List.of( new ViewState( 0, null ), new ViewState( middle, "Ship" ), new ViewState( 10_000, null ) ) ) {
+					assertTrue( ViewTestSupport.renderAll( v.build( t, s ) ) >= 1, v.title( ) );
+					assertFalse( v.explanation( t, s ).isBlank( ), v.title( ) );
+				}
 			}
 		}
 	}
 
 	@Test
 	void explanationsCarryTheKeyNumbers( ) throws Exception {
-		RecognitionTrace t = TraceFixtures.misrecognized( );
+		RecognitionTrace t = TraceFixtures.recognized( );
 		assertTrue( new WaveformStep( ).explanation( t, new ViewState( 0, null ) ).contains( "σ" ) );
-		assertTrue( new FramingStep( ).explanation( t, new ViewState( 4, null ) ).contains( "Frame " + Math.min( 5, t.preprocess( ).frameCount( ) ) + "/" ) );
+		assertTrue( new FramingStep( ).explanation( t, new ViewState( 4, null ) ).contains( "Frame 5/" ) );
 		assertTrue( new SpectrumStep( ).explanation( t, new ViewState( 0, null ) ).contains( "30 triangular filters" ) );
 		assertTrue( new MfccStep( ).explanation( t, new ViewState( 0, null ) ).contains( "√(2/30)" ) );
 	}

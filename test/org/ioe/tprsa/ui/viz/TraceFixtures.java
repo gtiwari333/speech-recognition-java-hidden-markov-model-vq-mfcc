@@ -14,6 +14,7 @@ import java.nio.file.Paths;
 final class TraceFixtures {
 
 	private static RecognitionTrace	misrecognized;
+	private static RecognitionTrace	recognized;
 	private static RecognitionTrace	silent;
 	private static TrainingSession	training;
 
@@ -26,6 +27,14 @@ final class TraceFixtures {
 			misrecognized = new Operations( ).recognizeWithTrace( new File( "TrainWav/Ship/Ship3.wav" ), "Ship" );
 		}
 		return misrecognized;
+	}
+
+	/** verification of Developer2.wav as "Developer": correctly recognised, 90 frames */
+	static synchronized RecognitionTrace recognized( ) throws Exception {
+		if ( recognized == null ) {
+			recognized = new Operations( ).recognizeWithTrace( new File( "TrainWav/Developer/Developer2.wav" ), "Developer" );
+		}
+		return recognized;
 	}
 
 	/** 0.5 s of digital silence */
