@@ -18,18 +18,23 @@ import org.ioe.tprsa.classify.speech.vq.Points;
 import org.ioe.tprsa.db.DataBase;
 import org.ioe.tprsa.db.ObjectIODataBase;
 import org.ioe.tprsa.db.TrainingTestingWaveFiles;
+import org.ioe.tprsa.trace.CodebookTrace;
 import org.ioe.tprsa.trace.RecognitionTrace;
 import org.ioe.tprsa.trace.VqTrace;
 import org.ioe.tprsa.trace.WordScore;
+import org.ioe.tprsa.trace.WordTrainingTrace;
 
 import javax.sound.sampled.AudioFormat;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Consumer;
 
 /**
  * @author Ganesh Tiwari
@@ -51,7 +56,6 @@ public class Operations {
 	final WaveData					wd;
 	PreProcess					prp;
 	Codebook					cb;
-	final List< double[] >			allFeaturesList		= new ArrayList<>();
 	HiddenMarkov				mkv;
 	DataBase					db;
 
@@ -74,74 +78,85 @@ public class Operations {
 	}
 
 	public void generateCodebook( ) throws Exception {
-		allFeaturesList.clear( );
-		trainTestWavs = new TrainingTestingWaveFiles( "train", baseDir );
-		int totalFrames = 0;
-		wavFiles = trainTestWavs.readWaveFilesList( );
-		for (File[] wavFile : wavFiles) {
-			for (int j = 0; j < wavFile.length; j++) {
-				System.out.println("Currently :::" + wavFile[j].getAbsoluteFile());
-				FeatureVector feature = extractFeatureFromFile(wavFile[j]);
-				for (int k = 0; k < feature.getNoOfFrames(); k++) {
-					allFeaturesList.add(feature.getFeatureVector()[k]);
-					totalFrames++;//
-				}
-			}
-		}
-		System.out.println( "total frames  " + totalFrames + "  allFeaturesList.size   " + allFeaturesList.size( ) );
-		// make a single 2d array of all features
-		double[][] allFeatures = new double[ totalFrames ][ FEATUREDIMENSION ];
-		for ( int i = 0; i < totalFrames; i++ ) {
-			double[] tmp = allFeaturesList.get( i );
-			allFeatures[ i ] = tmp;
-		}
-		Points[] pts = new Points[ totalFrames ];
-		for ( int j = 0; j < totalFrames; j++ ) {
-			pts[ j ] = new Points( allFeatures[ j ] );
-		}
-		System.out.println( "Generating Codebook........" );
-		Codebook cbk = new Codebook( pts, CODEBOOK_SIZE );
-		cbk.saveToFile( new ObjectIODataBase( baseDir ) );
-		System.out.println( "Codebook Generation Completed" );
-		// hmmTrain();
+		generateCodebookWithTrace( message -> { } );
+	}
+
+	public void hmmTrain( ) throws Exception {
+		hmmTrainWithTrace( message -> { } );
 	}
 
 	/**
-	 * @throws Exception
+	 * trains the VQ codebook on the feature vectors of all training recordings and saves it
+	 *
+	 * @param progress
+	 *            receives short status messages
 	 */
-	public void hmmTrain( ) throws Exception {
-		System.out.println( "inside hmm train" );
+	public CodebookTrace generateCodebookWithTrace( Consumer< String > progress ) throws Exception {
+		progress.accept( "Extracting features from the training recordings" );
+		trainTestWavs = new TrainingTestingWaveFiles( "train", baseDir );
+		List< double[] > allFeatures = new ArrayList<>( );
+		for ( File[] wordFiles : trainTestWavs.readWaveFilesList( ) ) {
+			for ( File wav : wordFiles ) {
+				Collections.addAll( allFeatures, extractFeatureFromFile( wav ).getFeatureVector( ) );
+			}
+		}
+		if ( allFeatures.size( ) < CODEBOOK_SIZE ) {
+			throw new IllegalStateException( "Not enough training data: " + allFeatures.size( ) + " feature vectors, at least " + CODEBOOK_SIZE + " needed" );
+		}
+		Points[] pts = new Points[ allFeatures.size( ) ];
+		for ( int j = 0; j < pts.length; j++ ) {
+			pts[ j ] = new Points( allFeatures.get( j ) );
+		}
+		progress.accept( "Generating codebook: " + CODEBOOK_SIZE + " codewords from " + pts.length + " feature vectors" );
+		Codebook cbk = new Codebook( pts, CODEBOOK_SIZE );
+		CodebookTrace trace = cbk.getTrace( );
+		cbk.saveToFile( new ObjectIODataBase( baseDir ) );
+		progress.accept( "Codebook saved" );
+		return trace;
+	}
+
+	/**
+	 * trains and saves one HMM per word folder in TrainWav/
+	 *
+	 * @param progress
+	 *            receives short status messages
+	 */
+	public List< WordTrainingTrace > hmmTrainWithTrace( Consumer< String > progress ) throws Exception {
+		File codebookFile = baseDir.resolve( "models" ).resolve( "codeBook" ).resolve( "codebook.cbk" ).toFile( );
+		if ( !codebookFile.isFile( ) ) {
+			throw new IllegalStateException( "Train first: no codebook found (" + codebookFile + "), run Generate CodeBook" );
+		}
 		trainTestWavs = new TrainingTestingWaveFiles( "train", baseDir );
 		cb = new Codebook( new ObjectIODataBase( baseDir ) );
-		// for each training word
-		int[][] quantized;
-		// extract features
 		wavFiles = trainTestWavs.readWaveFilesList( );
 		words = trainTestWavs.readWordWavFolder( );
+		List< WordTrainingTrace > traces = new ArrayList<>( );
 		for ( int i = 0; i < wavFiles.length; i++ ) {
-			// for each training samples
-			quantized = new int[ wavFiles[ i ].length ][];// training sequence
 			String currentWord = words.get( i );
-			System.out.println( "Current Word :::" + currentWord );
+			progress.accept( "Training word " + ( i + 1 ) + "/" + wavFiles.length + ": " + currentWord );
+			if ( wavFiles[ i ].length == 0 ) {
+				traces.add( WordTrainingTrace.skipped( currentWord, "no .wav files" ) );
+				continue;
+			}
+			List< String > names = new ArrayList<>( );
+			int[][] quantized = new int[ wavFiles[ i ].length ][];
 			for ( int j = 0; j < wavFiles[ i ].length; j++ ) {
-				System.out.println( "Currently :::" + wavFiles[ i ][ j ].getAbsoluteFile( ) );
-				FeatureVector feature = extractFeatureFromFile( wavFiles[ i ][ j ] );
-				// get Points object from feature vector
-				Points[] pts = getPointsFromFeatureVector( feature );
-				quantized[ j ] = cb.quantize( pts );
-				// ArrayWriter.printIntArrayToConole(quantized[j]);
+				names.add( wavFiles[ i ][ j ].getName( ) );
+				quantized[ j ] = cb.quantize( getPointsFromFeatureVector( extractFeatureFromFile( wavFiles[ i ][ j ] ) ) );
 			}
 			// fixed seed: retraining on the same recordings gives the same models
 			mkv = new HiddenMarkov( NUM_STATES, CODEBOOK_SIZE, new Random( currentWord.hashCode( ) ) );
-
-			// do training
-			System.out.println( "Training......." );
+			double[][] initialTransition = mkv.getTransition( );
+			double[][] initialOutput = mkv.getOutput( );
 			mkv.setTrainSeq( quantized );
-			mkv.train( );
+			double[] logLikelihoods = mkv.train( );
 			mkv.save( currentWord, new ObjectIODataBase( baseDir ) );
-			System.out.println( "Word  " + currentWord + " is trained" );
+			traces.add( new WordTrainingTrace( currentWord, names, Arrays.asList( quantized ), logLikelihoods,
+					logLikelihoods.length < HiddenMarkov.MAX_ITERATIONS, initialTransition, initialOutput, mkv.getTransition( ),
+					mkv.getOutput( ), null ) );
 		}
-		System.out.println( "HMM Train Completed" );
+		progress.accept( "HMM training completed" );
+		return traces;
 	}
 
 	public String hmmGetWordFromFileByteArray( byte[] byteArray ) throws Exception {

@@ -47,7 +47,11 @@ package org.ioe.tprsa.classify.speech.vq;
 import org.ioe.tprsa.classify.speech.CodeBookDictionary;
 import org.ioe.tprsa.db.DataBase;
 import org.ioe.tprsa.db.ObjectIODataBase;
+import org.ioe.tprsa.trace.CodebookTrace;
 import org.ioe.tprsa.trace.VqTrace;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * last updated on June 15, 2002<br>
@@ -96,6 +100,10 @@ public class Codebook {
 	 * dimension /////no of features
 	 */
 	protected int dimension;
+	/**
+	 * distortions recorded by {@link #initialize()}, one entry per split
+	 */
+	private final List<CodebookTrace.SplitTrace> splitTraces = new ArrayList<>();
 
 	/**
 	 * constructor to train a Codebook with given training points and Codebook
@@ -207,6 +215,8 @@ public class Codebook {
 
 			// group training points to centroids closest to them
 			groupPtoC();
+			List<Double> distortions = new ArrayList<>();
+			distortions.add(totalDistortion());
 
 			// Iteration 2: perform K-means algorithm until the distortion stops improving
 			for (int iteration = 0; iteration < MAX_KMEANS_ITERATIONS; iteration++) {
@@ -225,13 +235,37 @@ public class Codebook {
 				for (Centroid centroid : centroids) {
 					distortion_after_update += centroid.getDistortion();
 				}
+				distortions.add(distortion_after_update);
 
 				double improvement = distortion_before_update - distortion_after_update;
 				if (improvement < MIN_DISTORTION || improvement < MIN_RELATIVE_IMPROVEMENT * distortion_before_update) {
 					break;
 				}
 			}
+			splitTraces.add(new CodebookTrace.SplitTrace(centroids.length, distortions.stream().mapToDouble(Double::doubleValue).toArray()));
 		}
+	}
+
+	private double totalDistortion() {
+		double sum = 0;
+		for (Centroid centroid : centroids) {
+			sum += centroid.getDistortion();
+		}
+		return sum;
+	}
+
+	/**
+	 * how this codebook was trained; only for a codebook trained from points, not one loaded from a file
+	 */
+	public CodebookTrace getTrace() {
+		if (pt == null) {
+			throw new IllegalStateException("only a codebook trained in this session has a trace");
+		}
+		int[] counts = new int[centroids.length];
+		for (int c : quantize(pt)) {
+			counts[c]++;
+		}
+		return new CodebookTrace(pt.length, splitTraces, counts);
 	}
 
 	/**

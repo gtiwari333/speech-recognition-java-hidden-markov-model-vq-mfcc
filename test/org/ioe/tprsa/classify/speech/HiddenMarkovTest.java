@@ -230,4 +230,20 @@ class HiddenMarkovTest {
 		grid[ 0 ][ 0 ] = 42;
 		assertNotEquals( 42, hmm.getViterbiGrid( )[ 0 ][ 0 ], "returns a copy" );
 	}
+
+	@Test
+	void trainReturnsTheLogLikelihoodPerIteration( ) {
+		int[][] seqs = utterances( new int[] { 0, 1, 2, 3 }, 8, 8, 31 );
+		HiddenMarkov hmm = new HiddenMarkov( 4, 8, new Random( 2 ) );
+		hmm.setTrainSeq( seqs );
+		double[] ll = hmm.train( );
+		assertTrue( ll.length >= 2 && ll.length <= HiddenMarkov.MAX_ITERATIONS );
+		assertEquals( totalLogLikelihood( new HiddenMarkov( 4, 8, new Random( 2 ) ), seqs ), ll[ 0 ], 1e-9, "first value: the initial model" );
+		for ( int i = 1; i < ll.length; i++ ) {
+			assertTrue( ll[ i ] >= ll[ i - 1 ] - 1e-3, "iteration " + i + ": " + ll[ i - 1 ] + " -> " + ll[ i ] );
+		}
+		double[][] a = hmm.getTransition( );
+		a[ 0 ][ 0 ] = 42;
+		assertNotEquals( 42, hmm.getTransition( )[ 0 ][ 0 ], "returns a copy" );
+	}
 }

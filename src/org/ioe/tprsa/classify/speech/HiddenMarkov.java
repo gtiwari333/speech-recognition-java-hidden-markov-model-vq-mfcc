@@ -47,6 +47,8 @@ package org.ioe.tprsa.classify.speech;
 import org.ioe.tprsa.db.DataBase;
 import org.ioe.tprsa.db.ObjectIODataBase;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -87,7 +89,7 @@ public class HiddenMarkov {
 	/**
 	 * Baum-Welch stops after this many iterations, or earlier once the log likelihood stops improving
 	 */
-	static final int	MAX_ITERATIONS			= 50;
+	public static final int	MAX_ITERATIONS			= 50;
 	static final double	CONVERGENCE_THRESHOLD	= 1e-5;
 	/**
 	 * discrete set of observation symbols example: sequence of colour of balls
@@ -393,16 +395,39 @@ public class HiddenMarkov {
 	 * train the hmm model until no more improvement<br>
 	 * calls: none<br>
 	 * called by: trainHMM
+	 *
+	 * @return total log likelihood of the training sequences under the model before each re-estimation
 	 */
-	public void train( ) {
+	public double[] train( ) {
+		List< Double > logLikelihoods = new ArrayList<>( );
 		double previous = Double.NEGATIVE_INFINITY;
 		for ( int i = 0; i < MAX_ITERATIONS; i++ ) {
 			double logLikelihood = reestimate( );
+			logLikelihoods.add( logLikelihood );
 			if ( Math.abs( logLikelihood - previous ) < CONVERGENCE_THRESHOLD * Math.abs( logLikelihood ) ) {
 				break;
 			}
 			previous = logLikelihood;
 		}
+		return logLikelihoods.stream( ).mapToDouble( Double::doubleValue ).toArray( );
+	}
+
+	/** @return copy of the transition matrix a[i][j] */
+	public double[][] getTransition( ) {
+		return deepCopy( transition );
+	}
+
+	/** @return copy of the output matrix b[state][symbol] */
+	public double[][] getOutput( ) {
+		return deepCopy( output );
+	}
+
+	private static double[][] deepCopy( double[][] m ) {
+		double[][] c = new double[ m.length ][ ];
+		for ( int i = 0; i < m.length; i++ ) {
+			c[ i ] = m[ i ].clone( );
+		}
+		return c;
 	}
 
 	/**
