@@ -39,6 +39,7 @@ class RecognitionViewsTest {
 		RecognitionTrace t = TraceFixtures.silent( );
 		for ( StepView< RecognitionTrace > v : all( ) ) {
 			assertTrue( ViewTestSupport.renderAll( v.build( t, new ViewState( 0, null ) ) ) >= 1, v.title( ) );
+			assertFalse( v.explanation( t, new ViewState( 0, null ) ).isBlank( ), v.title( ) );
 		}
 		assertTrue( new WaveformStep( ).explanation( t, new ViewState( 0, null ) ).contains( "No speech detected" ) );
 	}
@@ -63,7 +64,12 @@ class RecognitionViewsTest {
 		RecognitionTrace t = TraceFixtures.misrecognized( );
 		java.awt.Container stack = ( java.awt.Container ) new BestPathStep( ).build( t, new ViewState( 0, t.recognizedWord( ) ) );
 		ChartPanel path = ( ChartPanel ) stack.getComponent( 0 );
-		assertEquals( t.verified( ) ? 1 : 2, path.getChart( ).getXYPlot( ).getDataset( ).getSeriesCount( ) );
+		assertFalse( t.verified( ) );
+		assertEquals( 2, path.getChart( ).getXYPlot( ).getDataset( ).getSeriesCount( ) );
+		RecognitionTrace ok = TraceFixtures.recognized( );
+		assertTrue( ok.verified( ) );
+		java.awt.Container okStack = ( java.awt.Container ) new BestPathStep( ).build( ok, new ViewState( 0, null ) );
+		assertEquals( 1, ( ( ChartPanel ) okStack.getComponent( 0 ) ).getChart( ).getXYPlot( ).getDataset( ).getSeriesCount( ) );
 	}
 
 	@Test
