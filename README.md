@@ -14,8 +14,74 @@ Automatically exported from code.google.com/p/speech-recognition-java-hidden-mar
 #### Main classes to look into are :
 
 - `org.ioe.tprsa.mediator.Operations` : demonstrates codebook generation, HMM training and recognition
-- `org.ioe.tprsa.ui.HMM_VQ_Speech_Recognition` : GUI to record voice samples per word, train, and test with
-  a just recorded sample or a saved .wav file
+- `org.ioe.tprsa.ui.HMM_VQ_Speech_Recognition` : GUI to record voice samples per word, train, and test with a just recorded sample or a saved .wav file.
+  The right half of the window shows every step of the algorithm for the most recent job: *Recognition steps* (waveform and end point
+  detection, framing and windowing, spectrum and mel filter bank, MFCC, deltas and energy, vector quantization, the score of every word
+  model and the best state path) and *Training steps* (LBG codebook, training sequences, Baum-Welch convergence, learned matrices,
+  summary). Charts show exact values on hover, zoom by dragging and can be saved as PNG (right click).
+
+## Screenshots
+
+Every step of the algorithm can be inspected after a recognition, verification or training run. The left side of
+the window keeps the original controls; the right side shows the steps of the most recent job.
+
+**Recognition: waveform and end point detection.** The noise statistics come from the quietest 200 ms (grey);
+the 10 ms frames kept as speech are green.
+
+![Waveform and end point detection](docs/screenshots/recognition-1-waveform.png)
+
+**Recognition: spectrum and mel filter bank** for the frame chosen with the slider, and its 30 log filter bank energies.
+
+![Spectrum and mel filter bank](docs/screenshots/recognition-3-spectrum.png)
+
+**Recognition: MFCC.** Log mel energies and mean-normalised MFCCs over time; the orange line is the selected frame.
+
+![MFCC](docs/screenshots/recognition-4-mfcc.png)
+
+**Verification that failed: word scores.** A *Zebra* recording verified as *Ship*: every word model's Viterbi
+score, the recognised word highlighted (blue), the expected word marked (orange).
+
+![Word scores](docs/screenshots/recognition-7-scores.png)
+
+**Verification that failed: best path.** The *Ship* model (red) cannot get past its first state on this recording,
+while the *Zebra* model (blue) walks through all six; below are the codeword sequence and the Ship model's Viterbi grid.
+
+![Best path](docs/screenshots/recognition-8-best-path.png)
+
+**Training: LBG codebook.** k-means distortion after each split (2 → 256 codewords) and how many training vectors
+each codeword received.
+
+![Codebook](docs/screenshots/training-1-codebook.png)
+
+**Training: Baum-Welch convergence** of one word's HMM (the orange line marks where training stopped).
+
+![Baum-Welch convergence](docs/screenshots/training-3-convergence.png)
+
+**Training: learned model.** Transition probabilities of the left-to-right model and the output probabilities of
+each state over the 256 codewords.
+
+![Learned model](docs/screenshots/training-4-model.png)
+
+### How the screenshots are made
+
+`test/org/ioe/tprsa/ui/ReadmeScreenshots.java` regenerates them from the real application, so they always show the
+current code and models:
+
+1. it computes real traces: recognition of `TrainWav/Developer/Developer2.wav` and a verification of
+   `TrainWav/Zebra/Zebra0.wav` as *Ship* with the committed models, and a codebook + HMM training run on a
+   temporary copy of `TrainWav/` (so `models/` is not touched);
+2. it opens the real main window, hands the traces to its inspectors and selects steps, frames and words on the
+   Swing event thread, exactly as a click would;
+3. it paints the window's content pane into a `BufferedImage` and writes it as PNG, so no screen capture
+   permission or manual cropping is needed.
+
+It needs a display (it is not a unit test). From the project root:
+
+```
+mvn -q test-compile
+java -cp "target/classes:target/test-classes:$HOME/.m2/repository/org/jfree/jfreechart/1.5.6/jfreechart-1.5.6.jar" \
+    org.ioe.tprsa.ui.ReadmeScreenshots docs/screenshots
+```
 
 ## Algorithm
 
@@ -40,7 +106,7 @@ Automatically exported from code.google.com/p/speech-recognition-java-hidden-mar
 | Step | What it does |
 |---|---|
 | Normalisation | divide every sample by the peak absolute amplitude, so the signal lies in [-1, 1] |
-| End point detection | the first 200 ms are taken as background noise; with their mean μ and standard deviation σ a sample is *voiced* when \|x − μ\| / σ ≥ 3 (one-dimensional Mahalanobis distance; 3σ covers 99.7 % of Gaussian noise). The signal is cut into 10 ms frames, a frame is kept when most of its samples are voiced, and the kept frames are concatenated (silence removal). An input shorter than 200 ms uses all of its samples as the noise estimate. When nothing is voiced, or the lead-in is perfectly constant, the signal is kept unchanged. Reference: *A New Silence Removal and Endpoint Detection Algorithm for Speech and Speaker Recognition Applications* (IIT Kharagpur) |
+| End point detection | the background noise is estimated from the quietest 200 ms of the recording: the 20 lowest-energy 10 ms frames, skipping all-zero frames (the recorder writes ~100 ms of digital silence at the start, and speech can begin right after it, so the paper's "first 200 ms" would mix silence and speech). With the noise mean μ and standard deviation σ a sample is *voiced* when \|x − μ\| / σ ≥ 3 (one-dimensional Mahalanobis distance; 3σ covers 99.7 % of Gaussian noise). The signal is cut into 10 ms frames, a frame is kept when most of its samples are voiced, and the kept frames are concatenated (silence removal). When nothing is voiced, or there is no non-silent frame to estimate the noise from, the signal is kept unchanged. Reference: *A New Silence Removal and Endpoint Detection Algorithm for Speech and Speaker Recognition Applications* (IIT Kharagpur) |
 | Framing | frames of N = 512 samples (23.2 ms) with 50 % overlap (hop 256), i.e. 2·L/N − 1 frames; a signal shorter than one frame becomes one zero padded frame |
 | Pre-emphasis | per frame, before windowing: s'(n) = s(n) − 0.95·s(n−1), and s'(1) = (1 − 0.95)·s(1) (HTK Book eq. 5.1) |
 | Windowing | Hamming window w(n) = 0.54 − 0.46·cos(2π(n−1)/(N−1)), n = 1..N (HTK Book eq. 5.2) |
@@ -116,11 +182,13 @@ Measured on the bundled `TrainWav/` recordings (5 words, 39 recordings):
 
 | | Accuracy |
 |---|---|
-| Training recordings, committed models | 38 / 39 |
-| Held-out recordings, 3-fold cross validation over 6 random splits | ≈ 84 % (196 / 234) |
+| Training recordings, committed models | 39 / 39 |
+| Held-out recordings, 3-fold cross validation over 6 random splits | ≈ 96 % (225 / 234) |
 
-With about 6 recordings per word the data set, not the algorithm, is the limiting factor; more
-recordings per word (and per speaker) is the most effective way to improve accuracy.
+Most of the earlier errors came from end point detection cutting away the speech of recordings where the
+word starts right after the recorder's leading silence (fixed by estimating the noise from the quietest
+200 ms). With about 6 recordings per word, more recordings per word (and per speaker) is now the most
+effective way to improve accuracy further.
 
 ### Verification against reference sources
 
@@ -130,7 +198,7 @@ recordings per word (and per speaker) is the most effective way to improve accur
 | FFT | Smith, *The Scientist and Engineer's Guide to DSP*, ch. 12 | unit test against a direct DFT for N = 2..512 |
 | Pre-emphasis, Hamming, mel filter bank, DCT, energy, deltas | Young et al., *The HTK Book*, ch. 5 (eqs. 5.1, 5.2, 5.13–5.16) | each block compared with the HTK formula: exact match |
 | Cepstral mean normalisation | *The HTK Book*, sec. 5.6 | unit test: every MFCC has zero mean over the utterance |
-| End point detection | Saha, Chakroborty, Senapati, *A New Silence Removal and Endpoint Detection Algorithm for Speech and Speaker Recognition Applications*, NCC 2005 | 200 ms noise estimate, 3σ threshold, 10 ms majority vote as in the paper |
+| End point detection | Saha, Chakroborty, Senapati, *A New Silence Removal and Endpoint Detection Algorithm for Speech and Speaker Recognition Applications*, NCC 2005 | 200 ms noise estimate, 3σ threshold, 10 ms majority vote as in the paper; deliberate deviation: the noise is taken from the quietest 200 ms instead of the first 200 ms (see Pre-processing), which raised held-out accuracy from ≈ 84 % to ≈ 96 % |
 | VQ codebook | Linde, Buzo, Gray, *An Algorithm for Vector Quantizer Design*, IEEE Trans. Commun. 28(1), 1980 | unit tests: k-means fixed point (every codeword is the mean of its cell), cluster separation |
 
 Practical additions that are not in the references: the 1e-4 probability floor, the 1e-10 energy floor and

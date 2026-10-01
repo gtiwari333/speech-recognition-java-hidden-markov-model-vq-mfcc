@@ -22,6 +22,32 @@ class EndPointDetectionTest {
 		assertTrue( voiced.length < signal.length / 2 );
 	}
 
+	/**
+	 * like the recorder's files: 100 ms of digital silence (exact zeros), speech starting right after it, then
+	 * background noise. The first 200 ms are half speech, so they cannot be used as the noise estimate.
+	 */
+	@Test
+	void speechStartingInsideTheFirst200msIsKept( ) {
+		int tone = RATE / 2;
+		float[] speech = TestSignals.sine( tone, 440, 1000 );
+		float[] background = TestSignals.noise( tone, 5, 11 );
+		for ( int i = 0; i < tone; i++ ) {
+			speech[ i ] += background[ i ];
+		}
+		float[] signal = TestSignals.concat( new float[ RATE / 10 ], speech, TestSignals.noise( RATE / 2, 5, 12 ) );
+
+		EndPointDetection epd = new EndPointDetection( signal, RATE );
+		float[] voiced = epd.doEndPointDetection( );
+
+		assertFalse( epd.isWholeSignalUsed( ) );
+		assertEquals( tone, voiced.length, 20 * SAMPLES_PER_MS, "the whole tone is kept" );
+		assertTrue( epd.getNoiseSd( ) < 20, "noise estimated from the background, not the speech: σ = " + epd.getNoiseSd( ) );
+		boolean[] noise = epd.getNoiseFrames( );
+		for ( int f = 0; f < 10; f++ ) {
+			assertFalse( noise[ f ], "digital silence frame " + f + " is not used as noise" );
+		}
+	}
+
 	@Test
 	void keptSamplesComeFromTheTone( ) {
 		float[] signal = TestSignals.silenceToneSilence( RATE / 2, RATE / 2, 7 );

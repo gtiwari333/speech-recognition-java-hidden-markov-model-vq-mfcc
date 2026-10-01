@@ -207,4 +207,44 @@ class HiddenMarkovTest {
 			}
 		}
 	}
+
+	@Test
+	void viterbiKeepsItsScoreGridAndPath( ) {
+		HiddenMarkov hmm = model( new double[] { 1, 0, 0 } );
+		int[] obs = { 0, 0, 1, 1, 2, 2, 1 };
+		double score = hmm.viterbi( obs );
+		double[][] grid = hmm.getViterbiGrid( );
+		assertEquals( obs.length, grid.length );
+		assertEquals( 3, grid[ 0 ].length );
+		double best = Double.NEGATIVE_INFINITY;
+		for ( double v : grid[ obs.length - 1 ] ) {
+			best = Math.max( best, v );
+		}
+		assertEquals( score, best, 1e-12 );
+		int[] path = hmm.getStatePath( );
+		assertEquals( obs.length, path.length );
+		assertEquals( 0, path[ 0 ] );
+		for ( int t = 1; t < path.length; t++ ) {
+			assertTrue( path[ t ] >= path[ t - 1 ] && path[ t ] - path[ t - 1 ] <= 2, "left-to-right, skips at most one state" );
+		}
+		grid[ 0 ][ 0 ] = 42;
+		assertNotEquals( 42, hmm.getViterbiGrid( )[ 0 ][ 0 ], "returns a copy" );
+	}
+
+	@Test
+	void trainReturnsTheLogLikelihoodPerIteration( ) {
+		int[][] seqs = utterances( new int[] { 0, 1, 2, 3 }, 8, 8, 31 );
+		HiddenMarkov hmm = new HiddenMarkov( 4, 8, new Random( 2 ) );
+		hmm.setTrainSeq( seqs );
+		double[] ll = hmm.train( );
+		assertTrue( ll.length >= 2 && ll.length <= HiddenMarkov.MAX_ITERATIONS );
+		assertTrue( hmm.hasConverged( ), "converges well before the iteration limit" );
+		assertEquals( totalLogLikelihood( new HiddenMarkov( 4, 8, new Random( 2 ) ), seqs ), ll[ 0 ], 1e-9, "first value: the initial model" );
+		for ( int i = 1; i < ll.length; i++ ) {
+			assertTrue( ll[ i ] >= ll[ i - 1 ] - 1e-3, "iteration " + i + ": " + ll[ i - 1 ] + " -> " + ll[ i ] );
+		}
+		double[][] a = hmm.getTransition( );
+		a[ 0 ][ 0 ] = 42;
+		assertNotEquals( 42, hmm.getTransition( )[ 0 ][ 0 ], "returns a copy" );
+	}
 }

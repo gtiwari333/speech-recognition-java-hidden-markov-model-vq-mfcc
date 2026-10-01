@@ -7,6 +7,10 @@
  */
 package org.ioe.tprsa.audio.feature;
 
+import java.util.Arrays;
+
+import org.ioe.tprsa.trace.MfccFrame;
+
 /**
  * 
  * @author Ganesh Tiwari
@@ -33,32 +37,29 @@ public class MFCC {
 	}
 
 	public double[] doMFCC(float[] framedSignal) {
+		return computeFrame(framedSignal).cepstra();
+	}
+
+	/**
+	 * MFCC of one (pre-emphasised, windowed) frame, keeping the intermediate results
+	 */
+	public MfccFrame computeFrame(float[] framedSignal) {
 		// Magnitude Spectrum (pre-emphasis and windowing are done in PreProcess)
 		double[] bin = magnitudeSpectrum(framedSignal);
-		/*
-		 * cbin=frequencies of the channels in terms of FFT bin indices (cbin[i]
-		 * for the i -th channel)
-		 */
-
-		// prepare filter for for melFilter
-		int[] cbin = fftBinIndices();// same for all
 		// process Mel Filterbank
-		double[] fbank = melFilter(bin, cbin);
-		// magnitudeSpectrum and bin filter indices
-
-		// System.out.println("after mel filter");
-		// ArrayWriter.printDoubleArrayToConole(fbank);
-
+		double[] fbank = melFilter(bin, fftBinIndices());
 		// Non-linear transformation
 		double[] f = nonLinearTransformation(fbank);
-		// System.out.println("after N L T");
-		// ArrayWriter.printDoubleArrayToConole(f);
-		
 		// Cepstral coefficients, by DCT
 		double[] cepc = dct.performDCT(f);
-		// System.out.println("after DCT");
-		// ArrayWriter.printDoubleArrayToConole(cepc);
-		return cepc;
+		return new MfccFrame(Arrays.copyOf(bin, samplePerFrame / 2 + 1), f, cepc);
+	}
+
+	/**
+	 * FFT bins of the mel filter edges / centres: filter k (1..30) rises from bin[k-1] to bin[k] and falls to bin[k+1]
+	 */
+	public int[] getMelCentreBins() {
+		return fftBinIndices();
 	}
 
 	private double[] magnitudeSpectrum(float[] frame) {

@@ -8,6 +8,8 @@
 package org.ioe.tprsa.db;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,12 +33,19 @@ public class TrainingTestingWaveFiles {
 	 * @param testOrTrain
 	 */
 	public TrainingTestingWaveFiles( String testOrTrain ) {
-		if ( testOrTrain.equalsIgnoreCase( "test" ) ) {
-			setWavPath( new File( "TestWav" ) );
-		} else if ( testOrTrain.equalsIgnoreCase( "train" ) ) {
-			setWavPath( new File( "TrainWav" ) );
-		}
+		this( testOrTrain, Paths.get( "" ) );
+	}
 
+	/**
+	 * @param baseDir
+	 *            folder that contains TrainWav/ and TestWav/
+	 */
+	public TrainingTestingWaveFiles( String testOrTrain, Path baseDir ) {
+		if ( testOrTrain.equalsIgnoreCase( "test" ) ) {
+			setWavPath( baseDir.resolve( "TestWav" ).toFile( ) );
+		} else if ( testOrTrain.equalsIgnoreCase( "train" ) ) {
+			setWavPath( baseDir.resolve( "TrainWav" ).toFile( ) );
+		}
 	}
 
 	private void readFolder( ) {

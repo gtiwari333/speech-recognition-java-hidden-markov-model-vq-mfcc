@@ -46,8 +46,9 @@ package org.ioe.tprsa.classify.speech;
 
 import org.ioe.tprsa.db.DataBase;
 import org.ioe.tprsa.db.ObjectIODataBase;
-import org.ioe.tprsa.util.ArrayWriter;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -88,7 +89,8 @@ public class HiddenMarkov {
 	/**
 	 * Baum-Welch stops after this many iterations, or earlier once the log likelihood stops improving
 	 */
-	static final int	MAX_ITERATIONS			= 50;
+	public static final int	MAX_ITERATIONS			= 50;
+	private boolean			converged;
 	static final double	CONVERGENCE_THRESHOLD	= 1e-5;
 	/**
 	 * discrete set of observation symbols example: sequence of colour of balls
@@ -130,6 +132,11 @@ public class HiddenMarkov {
 	 * best state sequence
 	 */
 	public int[] q;
+
+	/**
+	 * score grid of the last {@link #viterbi(int[])} call, [frame][state]
+	 */
+	private double[][] lastViterbiGrid;
 
 	/**
 	 * viterbi algorithm used to get best state sequence and probability<br>
@@ -194,7 +201,26 @@ public class HiddenMarkov {
 			q[ t ] = psi[ t + 1 ][ q[ t + 1 ] ];
 		}
 
+		lastViterbiGrid = phi;
 		return max;
+	}
+
+	/**
+	 * @return copy of the Viterbi score grid of the last {@link #viterbi(int[])} call, [frame][state]
+	 */
+	public double[][] getViterbiGrid( ) {
+		double[][] copy = new double[ lastViterbiGrid.length ][ ];
+		for ( int t = 0; t < copy.length; t++ ) {
+			copy[ t ] = lastViterbiGrid[ t ].clone( );
+		}
+		return copy;
+	}
+
+	/**
+	 * @return best state path of the last {@link #viterbi(int[])} call
+	 */
+	public int[] getStatePath( ) {
+		return q.clone( );
 	}
 
 	/**
@@ -370,16 +396,46 @@ public class HiddenMarkov {
 	 * train the hmm model until no more improvement<br>
 	 * calls: none<br>
 	 * called by: trainHMM
+	 *
+	 * @return total log likelihood of the training sequences under the model before each re-estimation
 	 */
-	public void train( ) {
+	public double[] train( ) {
+		converged = false;
+		List< Double > logLikelihoods = new ArrayList<>( );
 		double previous = Double.NEGATIVE_INFINITY;
 		for ( int i = 0; i < MAX_ITERATIONS; i++ ) {
 			double logLikelihood = reestimate( );
+			logLikelihoods.add( logLikelihood );
 			if ( Math.abs( logLikelihood - previous ) < CONVERGENCE_THRESHOLD * Math.abs( logLikelihood ) ) {
+				converged = true;
 				break;
 			}
 			previous = logLikelihood;
 		}
+		return logLikelihoods.stream( ).mapToDouble( Double::doubleValue ).toArray( );
+	}
+
+	/** @return true when the last train() stopped because the change fell below the threshold, false when it hit MAX_ITERATIONS */
+	public boolean hasConverged( ) {
+		return converged;
+	}
+
+	/** @return copy of the transition matrix a[i][j] */
+	public double[][] getTransition( ) {
+		return deepCopy( transition );
+	}
+
+	/** @return copy of the output matrix b[state][symbol] */
+	public double[][] getOutput( ) {
+		return deepCopy( output );
+	}
+
+	private static double[][] deepCopy( double[][] m ) {
+		double[][] c = new double[ m.length ][ ];
+		for ( int i = 0; i < m.length; i++ ) {
+			c[ i ] = m[ i ].clone( );
+		}
+		return c;
 	}
 
 	/**
@@ -480,13 +536,18 @@ public class HiddenMarkov {
 	 * @param word
 	 *            path of the file to load
 	 */
-	public HiddenMarkov( String word ) throws Exception{
-		DataBase db = new ObjectIODataBase( );
+	public HiddenMarkov( String word ) throws Exception {
+		this( word, new ObjectIODataBase( ) );
+	}
+
+	/**
+	 * loads the trained model of {@code word} from the given database
+	 */
+	public HiddenMarkov( String word, DataBase db ) throws Exception {
 		db.setType( "hmm" );
-		HMMModel model = new HMMModel( );
-		model = ( HMMModel ) db.readModel( word );// System.out.println(model.getClass());
+		HMMModel model = ( HMMModel ) db.readModel( word );
 		num_obSeq = model.getNum_obSeq( );
-		output = model.getOutput( );// ArrayWriter.print2DTabbedDoubleArrayToConole(output);
+		output = model.getOutput( );
 		transition = model.getTransition( );
 		pi = model.getPi( );
 		num_states = output.length;
@@ -554,15 +615,18 @@ public class HiddenMarkov {
 	 *
      */
 	public void save( String modelName ) throws Exception {
-		DataBase db = new ObjectIODataBase( );
+		save( modelName, new ObjectIODataBase( ) );
+	}
+
+	/**
+	 * saves the model as {@code modelName} into the given database
+	 */
+	public void save( String modelName, DataBase db ) throws Exception {
 		db.setType( "hmm" );
 		HMMModel model = new HMMModel( );
 		model.setOutput( output );
-		ArrayWriter.print2DTabbedDoubleArrayToConole( output );
 		model.setPi( pi );
-		ArrayWriter.printDoubleArrayToConole( pi );
 		model.setTransition( transition );
-		ArrayWriter.print2DTabbedDoubleArrayToConole( transition );
 		db.saveModel( model, modelName );
 	}
 }

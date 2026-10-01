@@ -7,6 +7,10 @@
  */
 package org.ioe.tprsa.audio.preProcessings;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
 /**
  * @author Madhav Pandey, Ganesh Tiwari
  * @reference 'A New Silence Removal and Endpoint Detection Algorithm for Speech
@@ -15,8 +19,49 @@ package org.ioe.tprsa.audio.preProcessings;
 public class EndPointDetection {
 
 	private final float[] originalSignal; // input
-	private final int firstSamples;
 	private final int samplePerFrame;
+	private double noiseMean = Double.NaN;
+	private double noiseSd = Double.NaN;
+	private boolean[] voicedFrames = new boolean[0];
+	private boolean wholeSignalUsed;
+	private boolean[] noiseFrames = new boolean[0];
+	private int noiseSamples;
+
+	public double getNoiseMean() {
+		return noiseMean;
+	}
+
+	public double getNoiseSd() {
+		return noiseSd;
+	}
+
+	/** voiced / silence decision per frame of {@link #getFrameSize()} samples */
+	public boolean[] getVoicedFrames() {
+		return voicedFrames.clone();
+	}
+
+	/** true when no speech was detected and the whole signal is returned */
+	public boolean isWholeSignalUsed() {
+		return wholeSignalUsed;
+	}
+
+	public double getVoicedThreshold() {
+		return VOICED_THRESHOLD;
+	}
+
+	public int getFrameSize() {
+		return samplePerFrame;
+	}
+
+	/** which frames of {@link #getFrameSize()} samples the noise statistics were computed from */
+	public boolean[] getNoiseFrames() {
+		return noiseFrames.clone();
+	}
+
+	/** number of samples the noise statistics were computed from */
+	public int getNoiseSamples() {
+		return noiseSamples;
+	}
 	/**
 	 * a sample is voiced when its Mahalanobis distance |x - mean| / sd from the background noise is at least this;
 	 * 3 standard deviations hold 99.7 % of Gaussian noise (Saha, Chakroborty, Senapati, NCC 2005)
@@ -27,16 +72,13 @@ public class EndPointDetection {
 	 */
 	static final int FRAME_MS = 10;
 	/**
-	 * the first 200 ms are assumed to be background noise
+	 * amount of background noise the statistics are estimated from: the quietest 200 ms of the recording
 	 */
 	static final int NOISE_MS = 200;
 
 	public EndPointDetection(float[] originalSignal, int samplingRate) {
 		this.originalSignal = originalSignal;
 		samplePerFrame = samplingRate * FRAME_MS / 1000;
-		// the first 200 ms are taken as background noise (according to formula),
-		// or the whole signal when it is shorter than that
-		firstSamples = Math.min( samplingRate * NOISE_MS / 1000, originalSignal.length );
 	}
 
 	public float[] doEndPointDetection() {
@@ -48,21 +90,34 @@ public class EndPointDetection {
 		double sd = 0.0;
 		double m = 0.0;
 
-		// 1. calculation of mean
-		for (int i = 0; i < firstSamples; i++) {
-			sum += originalSignal[i];
+		// 1. noise statistics from the quietest NOISE_MS of 10 ms frames. The first 200 ms cannot be used:
+		// recordings start with ~100 ms of digital silence (exact zeros) and speech can begin right after it
+		noiseFrames = quietestFrames();
+		for (int f = 0; f < noiseFrames.length; f++) {
+			if (noiseFrames[f]) {
+				for (int i = f * samplePerFrame; i < (f + 1) * samplePerFrame; i++) {
+					sum += originalSignal[i];
+				}
+				noiseSamples += samplePerFrame;
+			}
 		}
-		// System.err.println("total sum :" + sum);
-		m = sum / firstSamples;// mean
+		m = sum / noiseSamples;// mean (NaN without any noise frame)
 		sum = 0;// reuse var for S.D.
 
 		// 2. calculation of Standard Deviation
-		for (int i = 0; i < firstSamples; i++) {
-			sum += Math.pow((originalSignal[i] - m), 2);
+		for (int f = 0; f < noiseFrames.length; f++) {
+			if (noiseFrames[f]) {
+				for (int i = f * samplePerFrame; i < (f + 1) * samplePerFrame; i++) {
+					sum += Math.pow((originalSignal[i] - m), 2);
+				}
+			}
 		}
-		sd = Math.sqrt(sum / firstSamples);
+		sd = Math.sqrt(sum / noiseSamples);
+		noiseMean = m;
+		noiseSd = sd;
 		if (sd == 0 || Double.isNaN(sd)) {
 			// constant (e.g. digitally silent) lead-in: nothing to compare against
+			wholeSignalUsed = true;
 			return originalSignal.clone();
 		}
 		// System.err.println("summm sum :" + sum);
@@ -112,7 +167,12 @@ public class EndPointDetection {
 			}
 		}
 
+		voicedFrames = new boolean[frameCount];
+		for (int i = 0; i < frameCount; i++) {
+			voicedFrames[i] = voicedFrame[i] == 1;
+		}
 		if (usefulFramesCount == 0) {
+			wholeSignalUsed = true;
 			// no frame judged voiced: keep the signal rather than return nothing
 			return originalSignal.clone();
 		}
@@ -130,5 +190,28 @@ public class EndPointDetection {
 		}
 		// end
 		return silenceRemovedSignal;
+	}
+
+	/**
+	 * the NOISE_MS / FRAME_MS frames with the lowest energy, skipping all-zero frames (digital silence carries no noise statistics)
+	 */
+	private boolean[] quietestFrames() {
+		int frames = originalSignal.length / samplePerFrame;
+		List<double[]> energies = new ArrayList<>();
+		for (int f = 0; f < frames; f++) {
+			double energy = 0;
+			for (int i = f * samplePerFrame; i < (f + 1) * samplePerFrame; i++) {
+				energy += originalSignal[i] * originalSignal[i];
+			}
+			if (energy > 0) {
+				energies.add(new double[] {energy, f});
+			}
+		}
+		energies.sort(Comparator.comparingDouble(e -> e[0]));
+		boolean[] quietest = new boolean[frames];
+		for (int n = 0; n < Math.min(energies.size(), NOISE_MS / FRAME_MS); n++) {
+			quietest[(int) energies.get(n)[1]] = true;
+		}
+		return quietest;
 	}
 }
