@@ -20,6 +20,69 @@ Automatically exported from code.google.com/p/speech-recognition-java-hidden-mar
   model and the best state path) and *Training steps* (LBG codebook, training sequences, Baum-Welch convergence, learned matrices,
   summary). Charts show exact values on hover, zoom by dragging and can be saved as PNG (right click).
 
+## Screenshots
+
+Every step of the algorithm can be inspected after a recognition, verification or training run. The left side of
+the window keeps the original controls; the right side shows the steps of the most recent job.
+
+**Recognition: waveform and end point detection.** The noise statistics come from the quietest 200 ms (grey);
+the 10 ms frames kept as speech are green.
+
+![Waveform and end point detection](docs/screenshots/recognition-1-waveform.png)
+
+**Recognition: spectrum and mel filter bank** for the frame chosen with the slider, and its 30 log filter bank energies.
+
+![Spectrum and mel filter bank](docs/screenshots/recognition-3-spectrum.png)
+
+**Recognition: MFCC.** Log mel energies and mean-normalised MFCCs over time; the orange line is the selected frame.
+
+![MFCC](docs/screenshots/recognition-4-mfcc.png)
+
+**Verification that failed: word scores.** A *Zebra* recording verified as *Ship*: every word model's Viterbi
+score, the recognised word highlighted (blue), the expected word marked (orange).
+
+![Word scores](docs/screenshots/recognition-7-scores.png)
+
+**Verification that failed: best path.** The *Ship* model (red) cannot get past its first state on this recording,
+while the *Zebra* model (blue) walks through all six; below are the codeword sequence and the Ship model's Viterbi grid.
+
+![Best path](docs/screenshots/recognition-8-best-path.png)
+
+**Training: LBG codebook.** k-means distortion after each split (2 → 256 codewords) and how many training vectors
+each codeword received.
+
+![Codebook](docs/screenshots/training-1-codebook.png)
+
+**Training: Baum-Welch convergence** of one word's HMM (the orange line marks where training stopped).
+
+![Baum-Welch convergence](docs/screenshots/training-3-convergence.png)
+
+**Training: learned model.** Transition probabilities of the left-to-right model and the output probabilities of
+each state over the 256 codewords.
+
+![Learned model](docs/screenshots/training-4-model.png)
+
+### How the screenshots are made
+
+`test/org/ioe/tprsa/ui/ReadmeScreenshots.java` regenerates them from the real application, so they always show the
+current code and models:
+
+1. it computes real traces: recognition of `TrainWav/Developer/Developer2.wav` and a verification of
+   `TrainWav/Zebra/Zebra0.wav` as *Ship* with the committed models, and a codebook + HMM training run on a
+   temporary copy of `TrainWav/` (so `models/` is not touched);
+2. it opens the real main window, hands the traces to its inspectors and selects steps, frames and words on the
+   Swing event thread, exactly as a click would;
+3. it paints the window's content pane into a `BufferedImage` and writes it as PNG, so no screen capture
+   permission or manual cropping is needed.
+
+It needs a display (it is not a unit test). From the project root:
+
+```
+mvn -q test-compile
+java -cp "target/classes:target/test-classes:$HOME/.m2/repository/org/jfree/jfreechart/1.5.6/jfreechart-1.5.6.jar" \
+    org.ioe.tprsa.ui.ReadmeScreenshots docs/screenshots
+```
+
 ## Algorithm
 
 ```
